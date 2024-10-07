@@ -1,0 +1,465 @@
+package invoice_view
+
+import "kub/dashboardES/internal/models"
+import "fmt"
+import "strings"
+
+type EmployeeTableInfo struct {
+	TableId         string
+	Name            string
+	SelectedRows    []string
+	SelectedPayroll []string
+	Charges         []models.InvoiceCharge
+	PayrollCharges  []models.InvoiceCharge
+}
+
+type InvoiceFormViewData struct {
+	CompanyCharges    []models.InvoiceCharge
+	EmployeeCharges   []models.InvoiceCharge
+	EmployeeNames     map[string]string
+	EmployeeTableIds  []string
+	EmployeeSelRows   []string
+	CompanySelRows    []string
+	PayrollCharges    []models.InvoiceCharge
+	SelectedPayroll   []string
+	EmployeeTableInfo map[string]EmployeeTableInfo
+}
+
+templ InvoiceFormView(data InvoiceFormViewData) {
+	// Company charges
+	<div class="border border-gray-300 rounded mx-5">
+		<div class="bg-black text-white py-2 px-4 flex items-center rounded-t-lg">
+			<h2 class="font-semibold">Company Charges</h2>
+			<div class="grow"></div>
+			if len(data.CompanyCharges) > 0 {
+				<button type="button" onclick={ toggleTable("companyCharges") } class="pl-4">
+					<i id="companyChargesShowIcon" class="fas fa-chevron-up"></i>
+				</button>
+			}
+		</div>
+		if len(data.CompanyCharges) == 0 {
+			<div id="companyCharges" class="text-center py-2">
+				<p class="font-semibold">No charges found</p>
+			</div>
+		} else {
+			<div class="hidden" id="selCompanyRows" data-index={ strings.Join(data.CompanySelRows, ",") }></div>
+			<table class="w-full" id="companyCharges">
+				<thead>
+					<tr class="selected">
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							// <input
+							// 	type="checkbox"
+							// 	id="companyCharges-selectAll"
+							// />
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							ID
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Type
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Date
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Amount
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					for i, charge := range data.CompanyCharges {
+						<tr
+							id={ fmt.Sprintf("cCharge-%d", i) }
+							data-uuid={ charge.UUID }
+							onclick={ selectRow(fmt.Sprintf("cCharge-%d", i)) }
+							class="hover:bg-blue-100 hover:cursor-pointer p-3 tableRow"
+						>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm"><input id={ fmt.Sprintf("check-cCharge-%d", i) } data-uuid={ charge.UUID } type="checkbox" class="rowCheckbox"/></td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ fmt.Sprintf("%d", charge.ID) }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ charge.ChargesDefTypesName }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm date">{ charge.Date }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">
+								<sl-format-number
+									type="currency"
+									currency="AED"
+									value={ fmt.Sprintf("%f", charge.Amount) }
+									lang="en-US"
+								></sl-format-number>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+	// Employee charges
+	<div class="border border-gray-300 rounded mx-5 mt-6 mb-4">
+		<div class="bg-black text-white py-2 px-4 flex items-center rounded-t-lg">
+			<h2 class="font-semibold">Employee Charges</h2>
+			<div class="grow"></div>
+			if len(data.EmployeeCharges) > 0 {
+				<div class="flex gap-3 justify-between rounded p-1">
+					<sl-icon
+						name="list-ul"
+					></sl-icon>
+					<sl-switch size="small" id="toggleEmployeeType"></sl-switch>
+					<sl-icon name="person"></sl-icon>
+				</div>
+				<div id="listTableShow">
+					<button type="button" onclick={ toggleTable("employeeCharges") } class="pl-4">
+						<i id="employeeChargesShowIcon" class="fas fa-chevron-up"></i>
+					</button>
+				</div>
+				<div id="employeeTableShow" class="hidden">
+					<button type="button" onclick={ toggleTable("chargePerEmployee") } class="pl-4">
+						<i id="chargePerEmployeeShowIcon" class="fas fa-chevron-up"></i>
+					</button>
+				</div>
+			}
+		</div>
+		//EmployeeList
+		<div class="hidden" id="selEmployeeRows" data-index={ strings.Join(data.EmployeeSelRows, ",") }></div>
+		if len(data.CompanyCharges) == 0 {
+			<div id="employeeCharges" class="text-center py-2">
+				<p class="font-semibold">No charges found</p>
+			</div>
+		} else {
+			<table class="w-full" id="employeeCharges">
+				<thead>
+					<tr class="selected">
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							// <input type="checkbox" id="eSelectAll" />
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							ID
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Employee
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Type
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Date
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Amount
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					for i, eCharge := range data.EmployeeCharges {
+						<tr id={ fmt.Sprintf("eCharge-%d", i) } onclick={ selectRow(fmt.Sprintf("eCharge-%d", i)) } data-uuid={ eCharge.UUID } class="hover:bg-blue-100 hover:cursor-pointer p-3 tableRow">
+							<td class="px-1 py-1 border-b border-gray-200 text-sm"><input id={ fmt.Sprintf("check-eCharge-%d", i) } data-uuid={ eCharge.UUID } type="checkbox" class="rowCheckbox"/></td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ fmt.Sprintf("%d", eCharge.ID) }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ data.EmployeeNames[eCharge.ReferenceUUID] }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ eCharge.ChargesDefTypesName }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm date">{ eCharge.Date }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">
+								<sl-format-number
+									type="currency"
+									currency="AED"
+									value={ fmt.Sprintf("%f", eCharge.Amount) }
+									lang="en-US"
+								></sl-format-number>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+		//Charge Per Employee
+		<div class="hidden" id="employeeTableIds" data-index={ strings.Join(data.EmployeeTableIds, ",") }></div>
+		<div id="chargePerEmployee" class="w-full hidden">
+			for _,k := range data.EmployeeTableIds {
+				<div onclick={ toggleTable(k) } class="hover:cursor-pointer shadow-md flex p-2 border border-gray-300" style="margin-top:5px;">
+					<h2 class="font-semibold pl-2">{ data.EmployeeNames[k] }</h2>
+					<div class="grow"></div>
+					<i id={ k + "ShowIcon" } class="fas fa-chevron-down"></i>
+				</div>
+				<div class="hidden" id={ fmt.Sprintf("%v-selRows", k) } data-index={ strings.Join(data.EmployeeTableInfo[k].SelectedRows, ",") }></div>
+				if len(data.EmployeeTableInfo[k].Charges) <= 0 {
+					<div id={ k } class="hidden text-center py-2">
+						<p class="font-semibold">No charges data</p>
+					</div>
+				} else {
+					<table class="w-full hidden" id={ k }>
+						<thead>
+							<tr class="selected">
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									// <input type="checkbox" id="eSelectAll" />
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									ID
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									Type
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									Date
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									Amount
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							for i, eCharge := range data.EmployeeTableInfo[k].Charges {
+								<tr id={ fmt.Sprintf("%v-epCharge-%d", k, i) } onclick={ selectRow(fmt.Sprintf("%v-epCharge-%d", k, i)) } data-uuid={ eCharge.UUID } class="hover:bg-blue-100 hover:cursor-pointer p-3 tableRow">
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">
+										<input id={ fmt.Sprintf("check-%v-epCharge-%d", k, i) } data-uuid={ eCharge.UUID } type="checkbox" class="rowCheckbox"/>
+									</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">{ fmt.Sprintf("%d", eCharge.ID) }</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">{ eCharge.ChargesDefTypesName }</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm date">{ eCharge.Date }</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">
+										<sl-format-number
+											type="currency"
+											currency="AED"
+											value={ fmt.Sprintf("%f", eCharge.Amount) }
+											lang="en-US"
+										></sl-format-number>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+			}
+		</div>
+		//Payrolls////////////////////////////
+		//Header
+		<div class="flex px-2 py-2 mt-2 bg-gray-800 text-left items-center text-xs font-semibold text-gray-300 uppercase">
+			<h2>Payroll</h2>
+			<div class="grow"></div>
+			<div id="plistTableShow">
+				<button type="button" onclick={ toggleTable("pemployeeCharges") } class="pl-4">
+					<i id="pemployeeChargesShowIcon" class="fas fa-chevron-up"></i>
+				</button>
+			</div>
+			<div id="pemployeeTableShow" class="hidden">
+				<button type="button" onclick={ toggleTable("pchargePerEmployee") } class="pl-4">
+					<i id="pchargePerEmployeeShowIcon" class="fas fa-chevron-up"></i>
+				</button>
+			</div>
+		</div>
+		<div class="hidden" id="selPayrollRows" data-index={ strings.Join(data.SelectedPayroll, ",") }></div>
+		//Payroll List
+		if len(data.PayrollCharges) <=0 {
+			<div id="pemployeeCharges" class="text-center py-2">
+				<p class="font-semibold">No payroll data</p>
+			</div>
+		} else {
+			<table class="w-full" id="pemployeeCharges">
+				<thead>
+					<tr class="selected">
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							// <input type="checkbox" id="eSelectAll" />
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							ID
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Employee
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Type
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Date
+						</th>
+						<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+							Amount
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					for i, pCharge := range data.PayrollCharges {
+						<tr id={ fmt.Sprintf("pCharge-%d", i) } onclick={ selectRow(fmt.Sprintf("pCharge-%d", i)) } data-uuid={ pCharge.UUID } class="hover:bg-blue-100 hover:cursor-pointer p-3 tableRow">
+							<td class="px-1 py-1 border-b border-gray-200 text-sm"><input id={ fmt.Sprintf("check-pCharge-%d", i) } data-uuid={ pCharge.UUID } type="checkbox" class="rowCheckbox"/></td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ fmt.Sprintf("%d", pCharge.ID) }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ data.EmployeeNames[pCharge.ReferenceUUID] }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">{ pCharge.ChargesDefTypesName }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm date">{ pCharge.Date }</td>
+							<td class="px-1 py-1 border-b border-gray-200 text-sm">
+								<sl-format-number
+									type="currency"
+									currency="AED"
+									value={ fmt.Sprintf("%f", pCharge.Amount) }
+									lang="en-US"
+								></sl-format-number>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+		//Payroll Charge Per Employee
+		<div id="pchargePerEmployee" class="w-full hidden">
+			for _,k := range data.EmployeeTableIds {
+				<div onclick={ toggleTable("p" + k) } class="hover:cursor-pointer shadow-md flex p-2 border border-gray-300" style="margin-top:5px;">
+					<h2 class="font-semibold pl-2">{ data.EmployeeNames[k] }</h2>
+					<div class="grow"></div>
+					<i id={ "p" + k + "ShowIcon" } class="fas fa-chevron-down"></i>
+				</div>
+				<div class="hidden" id={ fmt.Sprintf("p%v-selRows", k) } data-index={ strings.Join(data.EmployeeTableInfo[k].SelectedPayroll, ",") }></div>
+				if len(data.EmployeeTableInfo[k].PayrollCharges)<=0 {
+					<div id={ "p" + k } class="text-center py-2 hidden">
+						<p class="font-semibold">No payroll data</p>
+					</div>
+				} else {
+					<table class="w-full hidden" id={ "p" + k }>
+						<thead>
+							<tr class="selected">
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									// <input type="checkbox" id="eSelectAll" />
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									ID
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									Type
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									Date
+								</th>
+								<th class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+									Amount
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							for i, pCharge := range data.EmployeeTableInfo[k].PayrollCharges {
+								<tr id={ fmt.Sprintf("p%v-pCharge-%d", k, i) } onclick={ selectRow(fmt.Sprintf("p%v-pCharge-%d", k, i)) } data-uuid={ pCharge.UUID } class="hover:bg-blue-100 hover:cursor-pointer p-3 tableRow">
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">
+										<input id={ fmt.Sprintf("check-p%v-pCharge-%d", k, i) } data-uuid={ pCharge.UUID } type="checkbox" class="rowCheckbox"/>
+									</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">{ fmt.Sprintf("%d", pCharge.ID) }</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">{ pCharge.ChargesDefTypesName }</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm date">{ pCharge.Date }</td>
+									<td class="px-1 py-1 border-b border-gray-200 text-sm">
+										<sl-format-number
+											type="currency"
+											currency="AED"
+											value={ fmt.Sprintf("%f", pCharge.Amount) }
+											lang="en-US"
+										></sl-format-number>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+			}
+		</div>
+	</div>
+	<script>
+//Table Functions
+	var toggleEmployeeType = document.getElementById("toggleEmployeeType")
+        toggleEmployeeType.addEventListener('sl-change', () => {
+			var listTable = document.getElementById("employeeCharges")
+			var perEmployeeTables = document.getElementById("chargePerEmployee")
+			var listTableShow = document.getElementById("listTableShow")
+			var chargePerEmployeeShow = document.getElementById("employeeTableShow")
+			var payrollListTable = document.getElementById("pemployeeCharges")
+			var payrollPerEmployeeTables = document.getElementById("pchargePerEmployee")
+			var showPerEmployeePayrollToggle = document.getElementById("pemployeeTableShow")
+			if (toggleEmployeeType.checked) {
+				listTable.classList.add("hidden");
+				perEmployeeTables.classList.remove("hidden");
+				listTableShow.classList.add("hidden");
+				chargePerEmployeeShow.classList.remove("hidden");
+				payrollListTable.classList.add("hidden");
+				payrollPerEmployeeTables.classList.remove("hidden");
+				showPerEmployeePayrollToggle.classList.remove("hidden");
+				document.getElementById("plistTableShow").classList.add("hidden")
+			} else {
+				listTable.classList.remove("hidden");
+				perEmployeeTables.classList.add("hidden");
+				listTableShow.classList.remove("hidden");
+				chargePerEmployeeShow.classList.add("hidden");
+				payrollListTable.classList.remove("hidden");
+				payrollPerEmployeeTables.classList.add("hidden");
+				showPerEmployeePayrollToggle.classList.add("hidden")
+				document.getElementById("plistTableShow").classList.remove("hidden")
+			}
+           
+        });
+	//Company charges
+		if (document.getElementById("companyCharges")) {
+			//Perform row selection on company charges
+		document.getElementById("selCompanyRows").dataset.index.split(",").forEach(function(row){
+			if (row.length == 0) {
+				return
+			}
+				// table.row(parseInt(row)).select();
+				document.getElementById(`cCharge-${row}`).classList.add("bg-blue-100", "selected")
+				document.getElementById(`check-cCharge-${row}`).checked = true
+		});
+	}
+	//employee charges
+	if (document.getElementById("employeeCharges")) {
+		//Perform row selection on employee charges
+		document.getElementById("selEmployeeRows").dataset.index.split(",").forEach(function(row){
+			if (row.length == 0) {
+				return
+			}
+			document.getElementById(`eCharge-${row}`).classList.add("bg-blue-100", "selected")
+			document.getElementById(`check-eCharge-${row}`).checked = true
+
+		});
+	}
+	// Payroll charges
+	if (document.getElementById("pemployeeCharges")) {
+		//Perform row selection on payroll charges
+		document.getElementById("selPayrollRows").dataset.index.split(",").forEach(function(row){
+			if (row.length == 0) {
+				return
+			}
+			document.getElementById(`pCharge-${row}`).classList.add("bg-blue-100", "selected")
+			document.getElementById(`check-pCharge-${row}`).checked = true
+		});
+	}
+
+		//Init charge per employee tables
+		document.getElementById("employeeTableIds").dataset.index.split(",").forEach(function(tableId){
+			//Charges
+			if (tableId.length == 0) {
+				return
+			}
+					//Auto select rows
+					document.getElementById(`${tableId}-selRows`).dataset.index.split(",").forEach(function(row){
+							if (row.length == 0) {
+								return
+							}
+							document.getElementById(`${tableId}-epCharge-${row}`).classList.add("bg-blue-100", "selected")
+							document.getElementById(`check-${tableId}-epCharge-${row}`).checked = true
+
+						});
+				
+				//Payroll	
+					//Auto select rows
+				document.getElementById(`p${tableId}-selRows`).dataset.index.split(",").forEach(function(row){
+					if (row.length == 0) {
+						return
+					}
+					document.getElementById(`p${tableId}-pCharge-${row}`).classList.add("bg-blue-100", "selected")
+					document.getElementById(`check-p${tableId}-pCharge-${row}`).checked = true
+				});	
+		});
+
+  </script>
+}
+
+script selectRow(id string) {
+	var tr = document.getElementById(id)
+	var checkbox = document.getElementById(`check-${id}`)
+	if (tr.classList.contains("selected")){
+		tr.classList.remove("bg-blue-100", "selected")
+		checkbox.checked = false
+	} else{
+		tr.classList.add("bg-blue-100", "selected")
+		checkbox.checked = true
+	}
+	console.log(getSelectedCharges())
+}

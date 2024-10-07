@@ -1,0 +1,13 @@
+package templates
+
+import "kub/dashboardES/internal/templates/layout"
+
+templ Index () {
+	@layout.Base(false,"Dashoard","") {
+		<div class="container mx-auto p-4">
+			<div class="card bg-blue-100 p-4 rounded shadow">
+				<p>Select an option</p>
+			</div>
+		</div>
+	}
+}

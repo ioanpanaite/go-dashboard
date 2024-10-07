@@ -1,0 +1,480 @@
+package charge_view
+
+import "kub/dashboardES/internal/models"
+import "fmt"
+
+type ChargeDefsFormData struct {
+	Mode        string
+	Company     []models.Company
+	CompanyId   string
+	ChargedefId string
+	Types       []models.ChargeType
+	Reftype     string
+	IsUser      string
+	Refuuid     string
+	Refid       string
+	InitData    models.ChargeDef
+}
+
+script updatePostDataAndURL(initialRefType string) {
+	//get id & uuid from chips
+	var uuids = [];
+	var ids = [];
+	var chipsDiv = null;
+	var form = document.getElementById("searchForm-CDF");
+	var toggler = document.getElementById("formTypeRadio")
+
+	var reftype = "company"
+	if (initialRefType === ""){
+		reftype= toggler.value === "company" ? "company" : "user";
+	}else{
+		reftype = initialRefType;
+	}
+
+	if (toggler.value == "company"){
+		chipsDiv = document.getElementById("selCompanies");
+	}else{
+		chipsDiv = document.getElementById("selEmployees")
+	}
+	chipsDiv.querySelectorAll("sl-tag").forEach((tag) => {
+		uuids.push(tag.getAttribute("data-uuid"));
+		ids.push(tag.getAttribute("data-id"));
+	});
+	form.setAttribute("hx-headers",JSON.stringify({"refids":ids,"refuuids":uuids,"reftype":reftype}))
+	// 
+}
+
+templ ChargedefsForm(data ChargeDefsFormData) {
+	<script>
+	var toggler = document.getElementById("formTypeRadio")
+if (toggler){
+			var selectedCompanyDiv = document.getElementById("selCompanies");
+			var searchCompany = document.getElementById("searchCompany-CDF");
+			var searchEmployee = document.getElementById("searchEmployee-CDF");
+
+
+			toggler.addEventListener("sl-change", (e) => {
+				if (e.target.value === "company") {
+					searchEmployee.classList.add("hidden");
+				} else {
+					if (selectedCompanyDiv.hasChildNodes()) {
+						searchEmployee.classList.remove("hidden");
+					}
+				}
+			});
+
+		// Create an observer instance
+		var observer = new MutationObserver(function(mutationsList, observer) {
+		if (selectedCompanyDiv.hasChildNodes()) {
+					if (toggler.value != "company"){
+						searchEmployee.classList.remove("hidden");
+					}
+				} else {
+					searchEmployee.classList.add("hidden");
+				}
+		});
+		// Start observing the target node for configured mutations
+		observer.observe(selectedCompanyDiv, { childList: true, subtree: true });
+}
+//get and set company ids
+function getAndSetCompantIds(){
+	var ids = [];
+	selectedCompanyDiv.querySelectorAll("sl-tag").forEach((tag) => {
+		ids.push(tag.getAttribute("data-id"));
+	});
+	var employeeInput = document.getElementById("inputFilterEmployee1");
+	employeeInput.setAttribute("hx-headers",JSON.stringify({"companyids":ids}))
+	document.getElementById("searchMenuEmployee1").open = true;
+}
+
+</script>
+	<div class="rounded overflow-hidden">
+		<div class="bg-black text-white py-2 px-4">
+			<h2>{ data.Mode }</h2>
+		</div>
+		<form
+			id="searchForm-CDF"
+			class="container space-y-4 columns-1 p-2"
+			hx-post={ fmt.Sprintf("/panels/invoicing/charges/%v/%v?ref-id=%v&ref-uuid=%v&ref-type=%v", data.CompanyId, data.ChargedefId, data.Refid, data.Refuuid, data.Reftype) }
+			hx-trigger="submit delay:50ms"
+			hx-swap="innerHTML"
+			hx-target="this"
+			hx-indicator=".htmx-indicator"
+		>
+			if data.Refuuid == "" {
+				<sl-radio-group
+					id="formTypeRadio"
+					label="Select an option"
+					name="chargedefTypeRadio"
+					value="company"
+					size="small"
+				>
+					<sl-radio-button data-target-id="searchCompany-CDF" value="company">Company</sl-radio-button>
+					<sl-radio-button data-target-id="searchEmployee-CDF" value="employee">Employee</sl-radio-button>
+				</sl-radio-group>
+				<div id="searchCompany-CDF">
+					<label for="searchCompany">Company:</label>
+					<div class="-mt-4">
+						<sl-dropdown hoist id="searchCompanyForm">
+							<div class="h-10"></div>
+							<sl-menu
+								id="menuItems"
+								class="menuItems overflow-y-scroll "
+								style=" width: 500px; height: 250px;"
+							>
+								<div class="flex flex-col items-center justify-center gap-3 w-full h-full">
+									<p>
+										Type to search...
+									</p>
+									<div class="flex justify-center gap-2 items-center">
+										<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+										<p>
+											Loading initial list...
+										</p>
+									</div>
+								</div>
+							</sl-menu>
+						</sl-dropdown>
+						<sl-input
+							slot="trigger"
+							id="inputFilterForm"
+							name="search"
+							size="small"
+							autocomplete="off"
+							onclick="document.getElementById('searchCompanyForm').open = true;"
+							placeholder="Search Company..."
+							hx-get={ fmt.Sprintf("/panels/companies/search?module=%v&page=%v&values=%v", "invoicing", "charges", "uuid") }
+							hx-target="previous .menuItems"
+							hx-swap="innerHTML"
+							hx-headers=""
+							hx-trigger="click, keyup delay:1000ms"
+							hx-indicator=".htmx-indicator"
+						></sl-input>
+						<div id="selCompanies" class="chipsholder block flex-wrap"></div>
+					</div>
+					<input type="hidden" id="companyIdsInput" name="companyIds"/>
+				</div>
+				<div id="searchEmployee-CDF" class="hidden">
+					<label for="searchEmployee1">Employee:</label>
+					<div class="-mt-4"></div>
+					<sl-dropdown hoist id="searchMenuEmployee1">
+						<div class="h-10"></div>
+						<sl-menu
+							id="menuItems"
+							class="menuItems overflow-y-scroll"
+							style=" width: 500px; height: 250px;"
+						>
+							<div class="flex flex-col items-center justify-center gap-3 w-full h-full">
+								<p>
+									Type to search...
+								</p>
+								<div class="flex justify-center gap-2 items-center">
+									<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+									<p>
+										Loading initial list...
+									</p>
+								</div>
+							</div>
+						</sl-menu>
+					</sl-dropdown>
+					<sl-input
+						slot="trigger"
+						id="inputFilterEmployee1"
+						name="search"
+						size="small"
+						autocomplete="off"
+						placeholder="Search Employee..."
+						hx-get={ fmt.Sprintf("/panels/employee/search?module=%v&page=%v&values=%v&fast=%v", "invoicing", "charges", "uuid", "true") }
+						hx-target="previous .menuItems"
+						hx-swap="innerHTML"
+						onclick="getAndSetCompantIds();"
+						hx-trigger="click delay:500ms, keyup delay:1000ms"
+						hx-indicator=".htmx-indicator"
+					></sl-input>
+					<div id="selEmployees" class="chipsholder block flex-wrap"></div>
+					<input type="hidden" id="employeesIdsInput" name="employeeIds"/>
+				</div>
+				<script>
+				//init if company & employee dropdown available
+				// from element
+				initializeDropdown("searchCompany-CDF");
+				initializeDropdown("searchEmployee-CDF");
+				</script>
+			}
+			<div class="">
+				<label class="block text-sm font-medium text-gray-700" for="name">Name *</label>
+				<input
+					class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+					type="text"
+					id="name"
+					name="name"
+					if data.InitData.Name != "" {
+						value={ data.InitData.Name }
+					}
+					required
+				/>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-gray-700" for="type">Type *</label>
+				<select
+					class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+					id="type"
+					name="type"
+					required
+				>
+					<option value>Select Type</option>
+					<!-- Add options here -->
+					for _, item := range data.Types {
+						<option
+							value={ fmt.Sprintf("%d", item.Id) }
+							if data.InitData.Name != "" {
+								if data.InitData.TypeId == item.Id {
+									selected
+								}
+							}
+						>
+							{ item.Name }
+						</option>
+					}
+				</select>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-gray-700" for="concept">Concept</label>
+				<textarea
+					class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+					id="concept"
+					name="concept"
+					rows="3"
+					placeholder="Add more information about this fee"
+				>
+					if data.InitData.Concept != "" {
+						{ data.InitData.Concept }
+					}
+				</textarea>
+			</div>
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div>
+					<label
+						class="block text-sm font-medium text-gray-700"
+						for="totalAmount"
+					>Total Amount</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="number"
+						id="totalAmount"
+						name="totalAmount"
+						if data.InitData.Name != "" {
+							value={ fmt.Sprintf("%.2f", data.InitData.Amount) }
+						}
+						step="0.01"
+						min="0"
+						
+					/>
+				</div>
+				<div>
+					<label
+						class="block text-sm font-medium text-gray-700"
+						for="monthlyAmount"
+					>Montly Amount</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="number"
+						id="monthlyAmount"
+						name="monthlyAmount"
+						step="0.01"
+						min="0"
+						if data.InitData.Name != "" {
+							value={ fmt.Sprintf("%.2f", data.InitData.Monthly) }
+						}
+					/>
+				</div>
+				<div>
+					<label class="block text-sm font-medium text-gray-700" for="months">Months *</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="number"
+						id="months"
+						name="months"
+						min="0"
+						if data.InitData.Name != "" {
+							value={ fmt.Sprintf("%d", data.InitData.Months) }
+						}
+						required
+					/>
+				</div>
+				<div>
+					<label
+						class="block text-sm font-medium text-gray-700"
+						for="prepayAmount"
+					>Prepay Amount *</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="number"
+						id="prepayAmount"
+						name="prepayAmount"
+						step="0.01"
+						min="0"
+						required
+						if data.InitData.Name != "" {
+							value={ fmt.Sprintf("%.2f", data.InitData.Prepay) }
+						}
+					/>
+				</div>
+			</div>
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<div>
+					<label
+						class="block text-sm font-medium text-gray-700"
+						for="contractStart"
+					>Contract Start *</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="date"
+						id="contractStart"
+						name="contractStart"
+						if data.InitData.Name != "" {
+							value={ data.InitData.DateStart }
+						}
+						required
+					/>
+				</div>
+				<div>
+					<label
+						class="block text-sm font-medium text-gray-700"
+						for="monthsLack"
+					>Months Lack</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="number"
+						id="monthsLack"
+						if data.InitData.Name != "" {
+							value={ data.InitData.Lack }
+						} else {
+							value="0"
+						}
+						min="0"
+						name="monthsLack"
+					/>
+				</div>
+				<div>
+					<label
+						class="block text-sm font-medium text-gray-700"
+						for="contractEnd"
+					>Contract End</label>
+					<input
+						class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+						type="date"
+						id="contractEnd"
+						if data.InitData.Name != "" {
+							value={ data.InitData.DateEnd }
+						}
+						name="contractEnd"
+					/>
+				</div>
+			</div>
+			<div class="flex items-start">
+				<div class="flex items-center h-5">
+					<input
+						class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+						type="checkbox"
+						id="autoRenew"
+						name="autoRenew"
+						if data.InitData.Name != "" {
+							if data.InitData.Renew {
+								checked
+							}
+						}
+					/>
+				</div>
+				<div class="ml-3 text-sm">
+					<label class="font-medium text-gray-700" for="autoRenew">Automatically renew at finish</label>
+				</div>
+			</div>
+			<div class="flex p-2">
+				<sl-button
+					id="submitBtn"
+					type="submit"
+					if data.Refuuid == "" {
+						onclick={ updatePostDataAndURL(data.Reftype) }
+					}
+				>
+					if data.InitData.Name != "" {
+						Update
+					} else {
+						Submit
+					}
+				</sl-button>
+				<div class="grow"></div>
+				<sl-button id="close-from" type="reset">Clear</sl-button>
+			</div>
+		</form>
+	</div>
+	<script>
+
+	function showLoading(){
+		document.getElementById("submitBtn").setAttribute("disabled", "true");
+		document.getElementById("submitBtn").innerHTML = `
+			<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+		`;
+	}
+
+	// document.getElementById("searchForm-CDF").addEventListener('htmx:beforeRequest', function(event) {
+	// 	var form = event.target;
+	// 	event.preventDefault(); // This should stop the HTMX request if validation fails
+	// });
+
+
+    function checkFormValidity() {
+
+		const totalAmount = document.getElementById("totalAmount");
+		const monthlyAmount = document.getElementById("monthlyAmount");
+		const companyIdsInput = document.getElementById("companyIdsInput");
+		const inputFilterForm = document.getElementById("inputFilterForm");
+		
+
+		console.log("checking from validity...");
+
+        // Reset custom validity messages to ensure fresh validation
+        totalAmount.setCustomValidity("");
+        monthlyAmount.setCustomValidity("");
+        inputFilterForm.setCustomValidity("");
+
+        // Check if at least one of totalAmount or monthlyAmount is filled
+        if (totalAmount.value === '' && monthlyAmount.value === '') {
+            totalAmount.setCustomValidity("Either Total Amount or Monthly Amount must be filled.");
+            monthlyAmount.setCustomValidity("Either Total Amount or Monthly Amount must be filled.");
+			console.log("Either Total Amount or Monthly Amount must be filled.");
+        } 
+
+        // Check if companyIdsInput is not empty
+        if (companyIdsInput.value === '') {
+            // Since companyIdsInput is a hidden field, setting its custom validity won't directly show a message to the user.
+            // You may need to display a message elsewhere in your form or UI.
+            inputFilterForm.setCustomValidity("A company must be selected.");
+			console.log("A company must be selected.");
+        }
+    }
+
+
+    // Remember to clear the custom validity when the user corrects the input
+    document.getElementById("totalAmount").addEventListener("input", checkFormValidity);
+    document.getElementById("monthlyAmount").addEventListener("input", checkFormValidity);
+	document.getElementById("companyIdsInput").addEventListener("input", checkFormValidity);
+	document.getElementById("searchCompanyForm").addEventListener("sl-after-hide", checkFormValidity);
+	checkFormValidity();
+
+	document.getElementById("searchForm-CDF").addEventListener('submit', function(event) {
+
+
+		// If the form is valid, show a spinner and submit the form
+		showLoading();
+		// Run 20ms after submission
+		setTimeout(function() {
+		document.getElementById("Refresh-charges").click();
+		document.getElementById("Refresh-Employee-charges").click();
+		},200);
+
+	});
+
+  	</script>
+}

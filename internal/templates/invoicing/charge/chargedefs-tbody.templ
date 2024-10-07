@@ -1,0 +1,203 @@
+package charge_view
+
+import "kub/dashboardES/internal/models"
+import "fmt"
+import "strings"
+
+type ChargedefsTBodyData struct {
+	Module      string
+	Page        string
+	CompanyIds  string
+	CompanyData []models.Company
+	Chargedefs  []models.ChargeDef
+	Route       string
+}
+
+templ ChargedefsTBody(data ChargedefsTBodyData) {
+	if len(data.Chargedefs) == 0 {
+		<tr>
+			<td
+				colspan="12"
+				class="px-1 py-1 border-b border-gray-200 text-sm text-center"
+			>
+				No charges available
+			</td>
+		</tr>
+	}
+	for _,item := range data.Chargedefs {
+		<tr
+			id={ fmt.Sprintf("chargedef-%d", item.Id) }
+			class="hover:bg-blue-100"
+		>
+			//Reference Type
+			<td class="px-1 py-1 border-b border-gray-200 text-sm text-center">
+				if item.ReferenceType == "User" {
+					<!-- Icon for User -->
+					<i class="fas fa-user"></i>
+				} else if item.ReferenceType == "Company" {
+					<!-- Icon for Company -->
+					<i class="fas fa-building"></i>
+				} else {
+					<!-- Default icon or empty if no match -->
+				}
+			</td>
+			//Reference Name
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<div>{ item.ReferenceName }</div>
+				<div class="text-xs">{  item.Name  }</div>
+			</td>
+			//Type & Concept
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<div>{ item.TypeName }</div>
+				<div class="text-xs">{ item.Concept }</div>
+			</td>
+			//Amount
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<sl-format-number
+					type="currency"
+					currency="AED"
+					value={ fmt.Sprintf("%f", item.Amount) }
+					lang="en-US"
+				></sl-format-number>
+			</td>
+			//Period
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+
+				for _, item := range strings.Split(item.Period, "\n") {
+					{ item }<br/>
+				}
+				
+				</td>
+			//Monthly
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<sl-format-number
+					type="currency"
+					currency="AED"
+					value={ fmt.Sprintf("%f", item.Monthly) }
+					lang="en-US"
+				></sl-format-number>
+				<br/>
+				<div class="text-gray-500">{ fmt.Sprintf("%d", item.Months) } ({ item .Lack })</div>
+			</td>
+			//Prepay
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<sl-format-number
+					type="currency"
+					currency="AED"
+					value={ fmt.Sprintf("%f", item.Prepay) }
+					lang="en-US"
+				></sl-format-number>
+				<br/>
+				<div class="text-gray-500">{ fmt.Sprintf("%d",item.PrepayMonth) }</div>
+			</td>
+			//Renew
+			<td class="px-1 py-1 border-b border-gray-200 text-sm text-center">
+				if item.Renew {
+					<sl-icon name="check-lg"></sl-icon>
+				} else {
+					-
+				}
+			</td>
+			//Actions
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				//Edit
+				<button
+					type="button"
+					id={ fmt.Sprintf("Edit-charges-%d", item.Id) }
+					hx-get={ fmt.Sprintf("/panels/invoicing/charges/%v/%d?reftype=%v&refuuid=%v&refid=%v", item.ReferenceId, item.Id, strings.ToLower(item.ReferenceType), item.ReferenceUuid, item.ReferenceId) }
+					hx-target="#addformdialog"
+					hx-swap="innerHTML"
+					hx-indicator=".htmx-indicator"
+					onclick={ show() }
+				>
+					<i id="editItemIcon" class="fas fa-edit ml-2"></i>
+				</button>
+				//Generate Charges
+				<sl-tooltip content="Generated Charges" placement="top">
+					<button
+						type="button"
+						id={ fmt.Sprintf("company-gen-btn-%d", item.Id) }
+						hx-get={ fmt.Sprintf("/panels/invoicing/charges/charges?companyId=%v&chargeId=%v&panelId=company", item.ReferenceId, item.Id) }
+						hx-trigger="click"
+						hx-on::after-request={ disableGenBtn(fmt.Sprintf("%d", item.Id), "company") }
+						hx-on::before-request={ displayLoading(fmt.Sprintf("%d", item.Id), "company") }
+						hx-target={ fmt.Sprintf("#company-gen-charges-%d", item.Id) }
+						hx-on:htmx:fail={ closeSingleCharge("company", fmt.Sprintf("%d", item.Id)) }
+						hx-swap="outerHTML"
+					>
+						<i class="fa-solid fa-list ml-2"></i>
+					</button>
+				</sl-tooltip>
+				//Link
+				// <button type="button" class="..." onclick="">
+				// 	<i id="faLink" class="fas fa-link ml-2"></i>
+				// </button>
+				//Delete
+				<button
+					id={ fmt.Sprintf("Remove-charges-company-%d", item.Id) }
+					hx-delete={ fmt.Sprintf("/panels/invoicing/charges/%v/%d", item.ReferenceId, item.Id) }
+					hx-confirm="Are you sure?"
+					hx-target="closest tr"
+					hx-swap="delete"
+					hx-indicator=".htmx-indicator"
+				>
+					<i id="removeItemIcon" class="fas fa-trash-alt ml-2"></i>
+				</button>
+				if item.Details>0 {
+					<button
+						type="button"
+						class="..."
+						onclick={ toggle(item.Id) }
+					>
+						<i id="faLight" class="fas fa-light fa-circle-info ml-2"></i>
+					</button>
+				}
+			</td>
+		</tr>
+		if item.Details>0 {
+			<tr
+				id={ fmt.Sprintf("detailsRow%d", item.Id) }
+				class="bg-gray-100 hidden"
+			>
+				<!-- Hidden nested element -->
+				<td
+					colspan="9"
+					class="px-1 py-1 border-b border-gray-200 text-sm"
+					id={ fmt.Sprintf("nestedElement%d", item.Id) }
+				>
+					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+					eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+					minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+					aliquip ex ea commodo consequat.
+				</td>
+			</tr>
+		}
+		<tr class="hidden" id={ fmt.Sprintf("company-gen-charges-%d", item.Id) }>
+			<td colspan="11">
+				<div class="flex justify-center items-center gap-2">
+					<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+					<p class="text-center font-bold text-md ">
+						Loading...
+					</p>
+				</div>
+			</td>
+		</tr>
+	}
+}
+
+script disableGenBtn(id,panelId string) {
+	document.getElementById(panelId+"-gen-btn-"+id).disabled = true;
+}
+
+script displayLoading(id,panelId string) {
+var el = document.getElementById(panelId+"-gen-charges-"+id);
+el.classList.remove("hidden");
+}
+
+script toggle(id int) {
+toggleDetails('detailsRow'+id)
+}
+
+script show() {
+	document.querySelector("#addformdialog").show()
+}

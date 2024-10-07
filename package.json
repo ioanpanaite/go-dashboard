@@ -1,0 +1,23 @@
+{
+  "devDependencies": {
+    "prettier": "^3.1.1",
+    "prettier-plugin-go-template": "^0.0.15",
+    "tailwindcss": "^3.4.1"
+  },
+  "dependencies": {
+    "elix": "^15.0.1",
+    "fs-extra": "^11.2.0"
+  },
+  "scripts": {
+    "dev": "$GOPATH/bin/air -c .air.toml",
+    "test": "echo 'Testing...' && go test ./tests -v",
+    "clean": "echo 'Cleaning...' && rm -f main",
+    "build-css": "npx tailwindcss -i ./public/css/ss.css -o ./public/css/tss.css --watch",
+    "build": "npx tailwindcss -i ./public/css/ss.css -o ./public/css/tss.css --minify && $GOPATH/bin/templ generate && node build.js",
+    "run": "npx tailwindcss -i ./public/css/ss.css -o ./public/css/tss.css && $GOPATH/bin/templ generate && go run cmd/dboard/main.go",
+
+    "win-build": "npx tailwindcss -i ./public/css/ss.css -o ./public/css/tss.css --minify && %GOPATH%/bin/templ generate && node build.js",
+    "win-dev": "%GOPATH%/bin/air -c .air.win.toml",
+    "win-run": "npx tailwindcss -i ./public/css/ss.css -o ./public/css/tss.css && %GOPATH%/bin/templ generate && go run cmd/dboard/main.go"
+  }
+}

@@ -1,0 +1,567 @@
+package charge_view
+
+import "fmt"
+import "kub/dashboardES/internal/templates/layout"
+
+type ChargedefsViewData struct {
+	Module string
+	Page   string
+	Route  string
+}
+
+templ ChargedefsView (data ChargedefsViewData) {
+	@layout.Base(false, data.Module, data.Page) {
+		<style>
+    .active-tab {
+      background-color: gray; /* Example color, change as needed */
+      color: white;
+    }
+  </style>
+		<div class="mx-auto">
+			<!-- Tab Headers -->
+			<div class="bg-gray-300 py-1">
+				<ul class="flex">
+					<li class="ml-1">
+						<button
+							id="tab1"
+							class="tab-button bg-black text-white py-2 px-4 focus:outline-none rounded-md"
+							role="tab"
+							aria-selected="true"
+							aria-controls="panel1"
+						>
+							All Charges
+						</button>
+					</li>
+					<li class="ml-1">
+						<button
+							id="tab2"
+							class="tab-button bg-gray-800 text-white py-2 px-4 focus:outline-none rounded-md"
+							role="tab"
+							aria-selected="false"
+							aria-controls="panel2"
+						>
+							Grouped Charges
+						</button>
+					</li>
+				</ul>
+			</div>
+			<!-- Company Charges Table (Initially Visible) -->
+			<div
+				id="panel1"
+				class="tab-panel pt-2 container mx-auto"
+				role="tabpanel"
+				aria-labelledby="tab1"
+			>
+				<!-- Selector -->
+				<sl-radio-group
+					size="small"
+					name="visualizeSelection"
+					value="all"
+					id="companyFilterSelection"
+					class="pt-3 px-2 container mx-auto"
+				>
+					// TODO: Working here!!!! hx-on::before-request="alert('Making a request!')"
+					<sl-radio-button
+						data-target-id="searchEmployee-CDF"
+						value="all"
+						class="filterable-hx-rows"
+						hx-get={ "/panels/invoicing/chargedef/filterCompanyCharges?page=1&filter=All" }
+						hx-trigger="click"
+						hx-target="#company-tbody"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+					>
+						<i class="fas fa-all"></i> All
+					</sl-radio-button>
+					<sl-radio-button
+						data-target-id="searchCompany-CDF"
+						value="company"
+						class="filterable-hx-rows"
+						hx-get={ "/panels/invoicing/chargedef/filterCompanyCharges?page=1&filter=Company" }
+						hx-trigger="click"
+						hx-target="#company-tbody"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+					><i class="fas fa-building pr-2"></i> Companies</sl-radio-button>
+					<sl-radio-button
+						data-target-id="searchEmployee-CDF"
+						value="employee"
+						class="filterable-hx-rows"
+						hx-get={ "/panels/invoicing/chargedef/filterCompanyCharges?page=1&filter=User" }
+						hx-trigger="click"
+						hx-target="#company-tbody"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+					><i class="fas fa-user pr-2"></i>Employees</sl-radio-button>
+				</sl-radio-group>
+				<div
+					class="container w-full m-2 border-black shadow-lg rounded-md overflow-hidden"
+				>
+					<div class="bg-black text-white py-2 px-4 flex">
+						<h2>All Charges</h2>
+						<div class="grow"></div>
+						<div class="flex bg-gray-800">
+							<sl-button
+								class="hidden"
+								size="small"
+								id="prevPageCompany"
+								type="submit"
+							>
+								<i class="fas fa-chevron-left"></i>
+							</sl-button>
+							<sl-input
+								id="companyPage"
+								size="small"
+								min="0"
+								step="1"
+								type="number"
+								readonly
+								class="w-12 hidden"
+								value="0"
+							></sl-input>
+							<sl-button
+								class="hidden"
+								size="small"
+								id="nextPageCompany"
+								type="submit"
+							>
+								<i class="fas fa-chevron-right"></i>
+							</sl-button>
+						</div>
+						<div class="w-2"></div>
+						<!-- Add hx-headers='{"reftype":"company","refuuid":"{{ .Data.company.Uuid }}"}' -->
+						<sl-button
+							size="small"
+							id="Add-charges"
+							hx-get={ fmt.Sprintf("/panels/invoicing/charges/%s/new", "_") }
+							hx-target="#addformdialog"
+							hx-swap="innerHTML"
+							hx-indicator=".htmx-indicator"
+							onclick={ show() }
+						>
+							Add Charges
+						</sl-button>
+						<div class="w-2"></div>
+						<sl-button
+							size="small"
+							id="Refresh-charges"
+							class="filterable-hx-rows"
+							hx-on::before-request="document.getElementById('companyFilterSelection').value = 'all';"
+							hx-get={ "/panels/invoicing/chargedef/search?page=1&type=company" }
+							hx-trigger="click"
+							hx-target="#company-tbody"
+							hx-swap="innerHTML"
+							hx-indicator=".htmx-indicator"
+						>
+							<sl-icon name="arrow-clockwise"></sl-icon>
+						</sl-button>
+					</div>
+					<table class="min-w-full leading-normal">
+						<thead>
+							<tr>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-4"
+								>
+									T
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-44"
+								>
+									<span>Reference<br/>Name</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-44"
+								>
+									<span>Type<br/>Concept</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Amount</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Period</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Monthly<br/>N (Lack)</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Prepay<br/>P. Month</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider w-20"
+								>
+									<span>Renew</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-32"
+								>
+									<span>Actions</span>
+								</th>
+							</tr>
+						</thead>
+						<tbody
+							id="company-tbody"
+							class="filterable-hx-rows"
+							hx-get={ "/panels/invoicing/chargedef/search?page=1&type=company" }
+							hx-trigger="filterUpdateEvent"
+							hx-target="#company-tbody"
+							hx-swap="innerHTML"
+							hx-indicator=".htmx-indicator"
+						>
+							<td
+								colspan="12"
+								class="px-1 py-1 border-b border-gray-200 text-sm text-center h-20"
+								id="spinner"
+							>
+								Filter to show results
+								<!-- <sl-spinner class="text-2xl m-5"></sl-spinner> -->
+							</td>
+						</tbody>
+					</table>
+					<div class="bg-black min-h-4 p-2 flex"></div>
+				</div>
+			</div>
+			<!-- Employee Charges Table (Initially Hidden) -->
+			<div
+				id="panel2"
+				class="tab-panel hidden pt-2 container mx-auto"
+				role="tabpanel"
+				aria-labelledby="tab2"
+			>
+				<!-- Selector -->
+				<sl-radio-group
+					size="small"
+					name="visualizeSelection"
+					id="employeeFilterSelection"
+					value="all"
+					class="pt-3 px-2 container mx-auto"
+				>
+					<sl-radio-button
+						data-target-id="searchEmployee-CDF"
+						value="all"
+						hx-get={ "/panels/invoicing/chargedef/filterEmployeeCharges?page=1&filter=All" }
+						hx-trigger="click"
+						class="filterable-hx-rows"
+						hx-target="#employee-tbody"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+					>
+						<i class="fas fa-all"></i> All
+					</sl-radio-button>
+					<sl-radio-button
+						data-target-id="searchCompany-CDF"
+						value="company"
+						hx-get={ "/panels/invoicing/chargedef/filterEmployeeCharges?page=1&filter=Company" }
+						hx-trigger="click"
+						class="filterable-hx-rows"
+						hx-target="#employee-tbody"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+					><i class="fas fa-building pr-2"></i> Companies</sl-radio-button>
+					<sl-radio-button
+						data-target-id="searchEmployee-CDF"
+						value="employee"
+						hx-get={ "/panels/invoicing/chargedef/filterEmployeeCharges?page=1&filter=User" }
+						hx-trigger="click"
+						class="filterable-hx-rows"
+						hx-target="#employee-tbody"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+					><i class="fas fa-user pr-2"></i>Employees</sl-radio-button>
+				</sl-radio-group>
+				<div
+					class="container w-full m-2 border-black shadow-lg rounded-md overflow-hidden"
+				>
+					<div class="bg-black text-white py-2 px-4 flex">
+						<h2>Grouped charges</h2>
+						<div class="grow"></div>
+						<div class="flex bg-gray-800">
+							<sl-button
+								class="hidden"
+								size="small"
+								id="prevPageEmployee"
+								type="submit"
+							>
+								<i class="fas fa-chevron-left"></i>
+							</sl-button>
+							<sl-input
+								class="hidden w-12"
+								id="employeePage"
+								size="small"
+								min="0"
+								step="1"
+								type="number"
+								readonly
+								value="0"
+							></sl-input>
+							<sl-button
+								class="hidden"
+								size="small"
+								id="nextPageEmployee"
+								type="submit"
+							>
+								<i class="fas fa-chevron-right"></i>
+							</sl-button>
+						</div>
+						<div class="w-2"></div>
+						<sl-button
+							size="small"
+							id="Refresh-Employee-charges"
+							class="filterable-hx-rows"
+							hx-on::before-request="document.getElementById('employeeFilterSelection').value = 'all';"
+							hx-get={ "/panels/invoicing/chargedef/search?page=1&type=employee" }
+							hx-trigger="click"
+							hx-target="#employee-tbody"
+							hx-swap="innerHTML"
+							hx-indicator=".htmx-indicator"
+						>
+							<sl-icon name="arrow-clockwise"></sl-icon>
+						</sl-button>
+					</div>
+					<table class="min-w-full leading-normal">
+						<thead>
+							<tr>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-4"
+								>
+									T
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-44"
+								>
+									<span>Reference<br/>Name</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-44"
+								>
+									<span>Type<br/>Concept</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Amount</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Period</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Monthly<br/>N (Lack)</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-24"
+								>
+									<span>Prepay<br/>P. Month</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider w-20"
+								>
+									<span>Renew</span>
+								</th>
+								<th
+									class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-32"
+								>
+									<span>Actions</span>
+								</th>
+							</tr>
+						</thead>
+						// hx-headers='{"companyId": "{{ .Data.companyId }}", "type": "employee"}'
+						<tbody
+							id="employee-tbody"
+							class="filterable-hx-rows"
+							hx-get={ fmt.Sprintf("/panels/invoicing/chargedef/search?type=%v&companyId=%v", "employee", "") }
+							hx-trigger="filterUpdateEvent"
+							hx-target="#employee-tbody"
+							hx-swap="innerHTML"
+							hx-indicator=".htmx-indicator"
+						>
+							<td
+								colspan="12"
+								class="px-1 py-1 border-b border-gray-200 text-sm text-center h-20"
+								id="spinner"
+							>
+								Filter to show results
+								<!-- <sl-spinner class="text-2xl m-5"></sl-spinner> -->
+							</td>
+						</tbody>
+					</table>
+					<div class="bg-black min-h-4 p-2"></div>
+				</div>
+			</div>
+		</div>
+		<script>
+    // JavaScript for Tab Functionality
+    document.addEventListener("DOMContentLoaded", function () {
+      const tabs = document.querySelectorAll(".tab-button");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          tabs.forEach((t) => {
+            t.setAttribute("aria-selected", "false");
+            t.classList.remove("bg-black");
+            t.classList.add("bg-gray-800");
+          });
+          tabPanels.forEach((panel) => panel.classList.add("hidden"));
+
+          tab.setAttribute("aria-selected", "true");
+          tab.classList.add("bg-black");
+          tab.classList.remove("bg-gray-800");
+          const panel = document.querySelector(
+            `#${tab.getAttribute("aria-controls")}`,
+          );
+          panel.classList.remove("hidden");
+        });
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const prevButtonCompany = document.querySelector("#prevPageCompany");
+      const nextButtonCompany = document.querySelector("#nextPageCompany");
+      const companytbody = document.querySelector("#company-tbody");
+      let companyPage = 1; // Initialize current page
+
+      const prevButtonEmployee = document.querySelector("#prevPageEmployee");
+      const nextButtonEmployee = document.querySelector("#nextPageEmployee");
+      const employeetbody = document.querySelector("#employee-tbody");
+      let employeePage = 1; // Initialize current page
+
+ 	function extractQueryParams(url) {
+        var searchParams = new URLSearchParams(url.search);
+        var params = {};
+
+        searchParams.forEach(function(value, key) {
+          params[key] = value;
+        });
+
+        return params;
+      }
+// Function to update query parameters and convert back to URL
+      function updateAndConvertToURL(url, updatedParams) {
+        var searchParams = new URLSearchParams(url.search);
+
+        // Update the existing parameters with the new values
+        Object.keys(updatedParams).forEach(function(key) {
+          searchParams.set(key, updatedParams[key]);
+        });
+
+        // Set the updated search parameters back to the URL
+        url.search = searchParams.toString();
+
+        return url.pathname + url.search;
+      }
+
+      function updatePaginationParams() {
+        // Update button parameters
+        // const headers = JSON.parse(companytbody.getAttribute("hx-headers"));
+        const qUrlCompany = companytbody.getAttribute("hx-get");
+		var urlCompany = new URL(qUrlCompany, window.location.href)
+		const queriesCompany = extractQueryParams(urlCompany)
+		queriesCompany.page = companyPage
+		const newUrlCompany = updateAndConvertToURL(urlCompany, queriesCompany)
+		companytbody.setAttribute("hx-get",newUrlCompany)
+       // headers.page = companyPage;
+
+        // companytbody.setAttribute("hx-headers", JSON.stringify(headers));
+
+        // Hide and disable the prevPageCompany button if the current page is 1
+        if (companyPage === 1) {
+          prevButtonCompany.style.display = "none";
+          prevButtonCompany.disabled = true;
+        } else {
+          prevButtonCompany.style.display = "";
+          prevButtonCompany.disabled = false;
+        }
+
+        // Update button parameters
+		const qUrlEmployee = employeetbody.getAttribute("hx-get")
+		var urlEmployee = new URL(qUrlEmployee, window.location.href)
+		const queriesEmployee = extractQueryParams(urlEmployee)
+		queriesEmployee.page = employeePage
+		const newUrlEmployee = updateAndConvertToURL(urlEmployee,queriesEmployee)
+		employeetbody.setAttribute("hx-get",newUrlEmployee)
+        // const headersEmployee = JSON.parse(
+        //   employeetbody.getAttribute("hx-headers"),
+        // );
+        // headersEmployee.page = employeePage;
+        // employeetbody.setAttribute(
+        //   "hx-headers",
+        //   JSON.stringify(headersEmployee),
+        // );
+        // Hide and disable the prevPageCompany button if the current page is 1
+        if (employeePage === 1) {
+          prevButtonEmployee.style.display = "none";
+          prevButtonEmployee.disabled = true;
+        } else {
+          prevButtonEmployee.style.display = "";
+          prevButtonEmployee.disabled = false;
+        }
+
+        document.getElementById("companyPage").value = companyPage;
+        document.getElementById("employeePage").value = employeePage;
+      }
+
+      // Event listeners for pagination buttons
+      prevButtonCompany.addEventListener("click", function () {
+        if (companyPage > 1) {
+          companyPage--;
+          updatePaginationParams();
+        }
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+
+      nextButtonCompany.addEventListener("click", function () {
+        companyPage++;
+        //console.log(companyPage);
+        updatePaginationParams();
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+
+      // Event listeners for pagination buttons
+      prevButtonEmployee.addEventListener("click", function () {
+        if (employeePage > 1) {
+          employeePage--;
+          updatePaginationParams();
+        }
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+
+      nextButtonEmployee.addEventListener("click", function () {
+        employeePage++;
+        //console.log(employeePage);
+        updatePaginationParams();
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+
+      updatePaginationParams(); // Initial update
+    });
+
+  </script>
+	}
+}

@@ -1,0 +1,26 @@
+package components
+
+import "kub/dashboardES/internal/models"
+import "fmt"
+
+templ EmployeeLinks(values string, data []models.Employee) {
+	if values == "uuid" {
+		for _, item := range data {
+			<sl-menu-item 
+			data-uuid={ item.Uuid }
+			data-id={ fmt.Sprintf("%d", item.Id) }
+			value={ item.CompanyUserUuid }>
+				{ item.Name } ({ item.CompanyName })
+			</sl-menu-item>
+		}
+	} else {
+		for _, item := range data {
+			<sl-menu-item 
+			data-uuid={ item.Uuid }
+			data-id={ fmt.Sprintf("%d", item.Id) }
+			value={ fmt.Sprintf("%d", item.Id) }>
+				{ item.Name } ({ item.CompanyName })
+			</sl-menu-item>
+		}
+	}
+}

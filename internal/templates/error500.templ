@@ -1,0 +1,24 @@
+package templates
+
+templ Error500(errMessage string, fullPage bool) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<meta charset="UTF-8"/>
+			if fullPage {
+				<title>500 Internal Server Error</title>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			}
+		</head>
+		<body class="flex justify-center items-center h-screen bg-gray-100">
+			<div
+				class="w-1/2 border-2 border-gray-400 p-6 rounded-lg bg-white shadow-lg text-center"
+			>
+				<h1 class="text-xl font-bold mb-4">An Error Occurred</h1>
+				<p class="mb-4">{ errMessage }</p>
+				<a href="/" class="text-blue-500 hover:text-blue-700">Go Home</a>
+			</div>
+		</body>
+	</html>
+}

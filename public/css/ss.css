@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+.dash-td {
+  @apply border-b border-gray-300 text-sm relative;
+}
+
+.dash-cell-dual {
+  @apply min-h-9 flex flex-col justify-center content-center;
+}
+
+.dash-cell-single {
+  @apply min-h-5 flex flex-col justify-center content-center;
+}
+
+.dash-cell-input {
+  @apply border border-gray-600 rounded m-px p-px pl-2;
+}
+
+.dash-cell-content {
+  @apply pl-2 min-h-5;
+}
+
+.dash-cell-separator {
+  @apply border-t border-gray-200;
+}
+
+.dash-cell-hover-button-holder {
+  @apply absolute right-1 top-0 bottom-0 inline flex flex-col;
+}
+
+.dash-cell-hover-button-effect {
+  @apply opacity-10 hover:opacity-100;
+}
+
+.dash-cell-action-button {
+  @apply p-px m-px border border-gray-600 rounded bg-gray-100 hover:bg-gray-200;
+}
+
+.dash-input-error {
+  @apply border border-red-300 rounded m-px;
+}

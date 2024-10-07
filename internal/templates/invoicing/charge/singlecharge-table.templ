@@ -1,0 +1,130 @@
+package charge_view
+
+import (
+	"kub/dashboardES/internal/models"
+ 	"fmt"
+ )
+
+
+templ SingChargeTable(data []models.Charge,panelId string) {
+	<tr id={ fmt.Sprintf("%v-gen-charges-head-%v",panelId,data[0].ChargeDefId) }>
+	<td colspan="11">
+		<div class="bg-black text-white py-2 flex justify-between items-center px-5">
+			<p>
+				Generated Charges
+			</p>
+			<sl-button
+				size="small"
+				onclick={ closeSingleCharge(panelId,data[0].ChargeDefId)}
+			>
+				Close
+			</sl-button>
+		</div>
+	</td>
+	</tr>
+	<tr id={ fmt.Sprintf("%v-gen-charges-%v",panelId,data[0].ChargeDefId) }>
+		<td colspan="11" class="px-2 py-1 border-[1px] border-gray-200 text-sm">
+	<table class="w-full">
+		<thead>
+		<tr>
+		<th
+			class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+			Date
+		</th>
+		<th
+			class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+			Type
+		</th>
+		<th
+			class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+			Amount
+		</th>
+		<th
+			class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+			Prepaid
+		</th>
+		<th
+			class="px-2 py-2 bg-gray-800 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+			Invoice
+		</th>
+		</tr>
+		</thead>
+<tbody>
+	if len(data) == 0 {
+		<tr>
+		<td colspan="5">
+			<p
+				class="px-1 py-1 border-b border-gray-200 text-sm text-center"
+			>
+				No charges available
+			</p>
+			</td>
+			</tr>
+		
+	}
+for _, item := range data {
+	<tr
+			id={ fmt.Sprintf("singlecharge-%d", item.Id) }
+			class="hover:bg-blue-100"
+		>
+		  //Date
+		  <td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item.Date }
+			</td>
+			//Type
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item.ChargeDefTypeName }
+			</td>
+			//Amount
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<sl-format-number
+					type="currency"
+					currency="AED"
+					value={ fmt.Sprintf("%f", item.Amount) }
+					lang="en-US"
+				></sl-format-number>
+			</td>
+			//Prepaid
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+			if item.Prepaid {
+			yes
+			} else{
+				-
+			}
+			</td>
+			//Inovice
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item.InvoiceId }
+			</td>
+		</tr>
+
+}
+</tbody>
+	</table>
+	</td>
+		</tr>
+}
+
+
+script closeSingleCharge(panelId,id string) {
+	//enable the gen btn
+	document.getElementById(panelId+"-gen-btn-"+id).disabled = false;
+	//Swap Generated table with hidden loading state
+	var trElement = document.createElement('tr');
+	var headElement = document.createElement('tr');
+
+	trElement.id = panelId+"-gen-charges-"+id;
+	trElement.classList.add("hidden");
+	trElement.innerHTML = `<td colspan="11">
+		<div class="flex justify-center items-center gap-2">
+			<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+		<p class="text-center font-bold text-md ">
+		
+			Loading...
+		</p>
+		</div>
+		</td>`
+		
+	document.getElementById(panelId+"-gen-charges-head-"+id).replaceWith(headElement)
+	document.getElementById(panelId+"-gen-charges-"+id).replaceWith(trElement)
+}

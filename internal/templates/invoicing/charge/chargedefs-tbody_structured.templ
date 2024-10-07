@@ -1,0 +1,554 @@
+package charge_view
+
+import (
+	"fmt"
+	"strings"
+	"kub/dashboardES/internal/models"
+)
+
+type ChargedefsTBodyStructuredData struct {
+	Module              string
+	Page                string
+	CompanyIds          string
+	ChargedefsCompany   []models.ChargeDef
+	ChargedefsEmployees []models.ChargedefsByEmployee
+	ChargedefsCompanies []models.ChargedefsByCompany
+	Route               string
+}
+
+templ ChargedefsTBodyStructured(data ChargedefsTBodyStructuredData) {
+	for _, item := range data.ChargedefsCompanies {
+		<tr class="bg-gray-700 text-white">
+			//Company Expand btn
+			<td class="px-1 py-1 border-b border-gray-200 text-sm" colspan="8">
+				<div style="width: 20px; display: inline-block">
+					<button
+						type="button"
+						onclick={ localToggleVisibility(fmt.Sprintf("%d", item.Company.Id), fmt.Sprintf(".chargedefCompany-%d", item.Company.Id)) }
+					>
+						<i
+							id={ fmt.Sprintf("toggleIcon-%d", item.Company.Id) }
+							if item.Charges != nil || len(item.Employees) > 0 {
+								class="fas fa-chevron-down"
+							} else {
+								class="fas fa-chevron-right"
+							}
+						></i>
+					</button>
+				</div>
+				<strong>{ item.Company.Name }</strong>
+			</td>
+			//Add charges btn
+			<td>
+				<button
+					type="button"
+					id={ fmt.Sprintf("Add-charges-company-%d", item.Company.Id) }
+					hx-get={ fmt.Sprintf("/panels/invoicing/charges/%v/new?reftype=%v&refuuid=%v&refid=%d&name=%v", item.Company.Id, "company", item.Company.Uuid, item.Company.Id, item.Company.Name) }
+					hx-target="#addformdialog"
+					hx-swap="innerHTML"
+					hx-indicator=".htmx-indicator"
+					onclick="document.querySelector('#addformdialog').show()"
+				>
+					<i id="addChargesIcon" class="fas fa-plus-circle ml-2"></i>
+				</button>
+			</td>
+		</tr>
+		<!-- Iterate over the charges for each company -->
+		<!-- Check if the employee has charges -->
+		if item.Charges != nil {
+			<!-- Iterate over the charges for each employee -->
+			//Company charges
+			for _, companyCharge := range item.Charges {
+				<tr
+					id={ fmt.Sprintf("chargedef-%d", companyCharge.Id) }
+					class={ fmt.Sprintf("chargedefCompany-%d hover:bg-blue-100", item.Company.Id) }
+				>
+					//Reference Icon Type
+					<td class="px-1 py-1 border-b border-gray-200 text-sm text-center">
+						if companyCharge.ReferenceType =="User" {
+							<!-- Icon for User -->
+							<i class="fas fa-user"></i>
+						} else if companyCharge.ReferenceType == "Company" {
+							<!-- Icon for Company -->
+							<i class="fas fa-building"></i>
+						} else {
+							<!-- Default icon or empty if no matcompanyCharge -->
+						}
+					</td>
+					//Reference Name
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						<div>{ companyCharge.ReferenceName }</div>
+						<div class="text-xs">{  companyCharge.Name  }</div>
+					</td>
+					//Type & Concept
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						<div>{ companyCharge.TypeName }</div>
+						<div class="text-xs">{ companyCharge.Concept }</div>
+					</td>
+					//Amount
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						<sl-format-number
+							type="currency"
+							currency="AED"
+							value={ fmt.Sprintf("%f", companyCharge.Amount) }
+							lang="en-US"
+						></sl-format-number>
+					</td>
+					//Period
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						{ companyCharge.Period }
+					</td>
+					//Monthly (Lack)
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						<sl-format-number
+							type="currency"
+							currency="AED"
+							value={ fmt.Sprintf("%f", companyCharge.Monthly) }
+							lang="en-US"
+						></sl-format-number>
+						<br/>
+						<div class="text-gray-500">{   fmt.Sprintf("%d",companyCharge.Months) } ({ companyCharge.Lack } )</div>
+					</td>
+					//Prepaid & P.Month
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						<sl-format-number
+							type="currency"
+							currency="AED"
+							value={ fmt.Sprintf("%f", companyCharge.Prepay) }
+							lang="en-US"
+						></sl-format-number>
+						<br/>
+						<div class="text-gray-500">{ fmt.Sprintf("%d",companyCharge.PrepayMonth ) } </div>
+					</td>
+					//Renew
+					<td class="px-1 py-1 border-b border-gray-200 text-sm text-center">
+						if companyCharge.Renew {
+							<sl-icon name="check-lg"></sl-icon>
+						} else {
+							-
+						}
+					</td>
+					//Actions
+					<td class="px-1 py-1 border-b border-gray-200 text-sm">
+						//Edit
+						<button
+							type="button"
+							id={ fmt.Sprintf("Edit-charges-employee-%d", companyCharge.Id) }
+							hx-get={ fmt.Sprintf("/panels/invoicing/charges/%v/%d?reftype=%v&refuuid=%v&refid=%v", companyCharge.ReferenceId, companyCharge.Id, strings.ToLower(companyCharge.ReferenceType), companyCharge.ReferenceUuid, companyCharge.ReferenceId) }
+							hx-target="#addformdialog"
+							hx-swap="innerHTML"
+							hx-indicator=".htmx-indicator"
+							onclick={ show() }
+						>
+							<i id="editItemIcon" class="fas fa-edit ml-2"></i>
+						</button>
+						//Generate Charges
+						<sl-tooltip content="Generated Charges" placement="top">
+							<button
+								type="button"
+								id={ fmt.Sprintf("employee-gen-btn-%d", companyCharge.Id) }
+								hx-get={ fmt.Sprintf("/panels/invoicing/charges/charges?companyId=%v&chargeId=%v&panelId=employee", companyCharge.ReferenceId, companyCharge.Id) }
+								hx-trigger="click"
+								hx-on:htmx:fail={ closeSingleCharge("employee", fmt.Sprintf("%d", companyCharge.Id)) }
+								hx-on::after-request={ disableGenBtn(fmt.Sprintf("%d", companyCharge.Id), "employee") }
+								hx-on::before-request={ displayLoading(fmt.Sprintf("%d", companyCharge.Id), "employee") }
+								hx-target={ fmt.Sprintf("#employee-gen-charges-%d", companyCharge.Id) }
+								hx-swap="outerHTML"
+							>
+								<i class="fa-solid fa-list ml-2"></i>
+							</button>
+						</sl-tooltip>
+						//Link
+						// <button>
+						// 	<i id="faLink" class="fas fa-link ml-2"></i>
+						// </button>
+						//Delete
+						<button
+							type="button"
+							id={ fmt.Sprintf("Remove-charges-employee-%d", companyCharge.Id) }
+							hx-delete={ fmt.Sprintf("/panels/invoicing/charges/%d/%d", item.Company.Id, companyCharge.Id) }
+							hx-confirm="Are you sure?"
+							hx-target="closest tr"
+							hx-swap="delete"
+							hx-indicator=".htmx-indicator"
+						>
+							<i id="removeItemIcon" class="fas fa-trash-alt ml-2"></i>
+						</button>
+						if companyCharge.Details >0 {
+							<button
+								type="button"
+								class="..."
+								onclick={ toggle(companyCharge.Id) }
+							>
+								<i id="faLight" class="fas fa-light fa-circle-info ml-2"></i>
+							</button>
+						}
+					</td>
+				</tr>
+				<!-- Details row if available... -->
+				if companyCharge.Details>0 {
+					<tr
+						id={ fmt.Sprintf("detailsRow%d", companyCharge.Id) }
+						class="bg-gray-100 hidden"
+					>
+						<!-- Hidden nested element -->
+						<td
+							colspan="9"
+							class="px-1 py-1 border-b border-gray-200 text-sm"
+							id={ fmt.Sprintf("nestedElement%d", companyCharge.Id) }
+						>
+							Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+							eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+							enim ad minim veniam, quis nostrud exercitation ullamco laboris
+							nisi ut aliquip ex ea commodo consequat.
+						</td>
+					</tr>
+				}
+				//Generated Charges Row
+				<tr class="hidden" id={ fmt.Sprintf("employee-gen-charges-%d", companyCharge.Id) }>
+					<td colspan="9">
+						<div class="flex justify-center items-center gap-2">
+							<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+							<p class="text-center font-bold text-md ">
+								Loading...
+							</p>
+						</div>
+					</td>
+				</tr>
+			}
+		} else {
+			<!-- Row to display when there are no charges -->
+			<tr
+				class={ fmt.Sprintf("chargedefCompany-%d hidden hover:bg-blue-100", item.Company.Id) }
+			>
+				<td
+					class="px-1 py-1 border-b border-gray-200 text-sm text-center"
+					colspan="9"
+				>
+					No entries
+				</td>
+			</tr>
+		}
+		if item.Details>0 {
+			<tr
+				id={ fmt.Sprintf("detailsRow%d", item.Company.Id) }
+				class="bg-gray-100 hidden"
+			>
+				<!-- Hidden nested element -->
+				<td
+					colspan="9"
+					class="px-1 py-1 border-b border-gray-200 text-sm"
+					id={ fmt.Sprintf("nestedElement%d", item.Company.Id) }
+				>
+					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+					eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+					enim ad minim veniam, quis nostrud exercitation ullamco laboris
+					nisi ut aliquip ex ea commodo consequat.
+				</td>
+			</tr>
+		}
+		for _, emp := range item.Employees {
+			<tr class={ fmt.Sprintf("chargedefCompany-%d bg-gray-200", item.Company.Id) }>
+				//Employee Expand btn
+				<td class="px-1 py-1 border-b border-gray-200 text-sm" colspan="8">
+					<div style="width: 20px; display: inline-block">
+						<button
+							type="button"
+							onclick={ localToggleChargesVisibility(emp.Employee.Id) }
+							onclick={ localToggleVisibility(fmt.Sprintf("%d", emp.Employee.Id), fmt.Sprintf(".chargedefEmployee-%d", emp.Employee.Id)) }
+						>
+							<i
+								id={ fmt.Sprintf("toggleIcon-%d", emp.Employee.Id) }
+								if emp.Charges != nil {
+									class="fas fa-chevron-down"
+								} else {
+									class="fas fa-chevron-right"
+								}
+							></i>
+						</button>
+					</div>
+					<strong>{ emp.Employee.Name }</strong>
+				</td>
+				//Add charges to employee btn
+				<td class="px-1 py-1 border-b border-gray-200 text-sm">
+					<!-- Icon for adding charges -->
+					//TODO: Changed UUID to CompanyUserUUID
+					<button
+						type="button"
+						id={ fmt.Sprintf("Add-charges-employee-%d", emp.Employee.Id) }
+						hx-get={ fmt.Sprintf("/panels/invoicing/charges/%v/new?reftype=%v&refuuid=%v&refid=%d&name=%v", emp.Employee.CompanyId, "user", emp.Employee.Uuid, emp.Employee.Id, emp.Employee.Name) }
+						hx-target="#addformdialog"
+						hx-swap="innerHTML"
+						hx-indicator=".htmx-indicator"
+						onclick="document.querySelector('#addformdialog').show()"
+					>
+						<i id="addChargesIcon" class="fas fa-plus-circle ml-2"></i>
+					</button>
+					// <button type="button" class="..." onclick>
+					// 	<i id="faLink" class="fas fa-link ml-2"></i>
+					// </button>
+				</td>
+			</tr>
+			<!-- Check if the employee has charges -->
+			if emp.Charges != nil {
+				//Employee Charges
+				<!-- Iterate over the charges for each employee -->
+				for _, empcharge := range emp.Charges {
+					<tr
+						id={ fmt.Sprintf("chargedef-%d", empcharge.Id) }
+						class={ fmt.Sprintf("chargedefCompany-%d chargedefEmployee-%d hover:bg-blue-100", item.Company.Id, emp.Employee.Id) }
+					>
+						//Reference Icon Type
+						<td class="px-1 py-1 border-b border-gray-200 text-sm text-center">
+							if empcharge.ReferenceType == "User" {
+								<!-- Icon for User -->
+								<i class="fas fa-user"></i>
+							} else if empcharge.ReferenceType == "Company" {
+								<!-- Icon for Company -->
+								<i class="fas fa-building"></i>
+							} else {
+								<!-- Default icon or empty if no match -->
+							}
+						</td>
+						// Reference Name
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							<div>{ empcharge.ReferenceName }</div>
+							<div class="text-xs">{  empcharge.Name  }</div>
+						</td>
+						//Type & Concept
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							<div>{ empcharge.TypeName }</div>
+							<div class="text-xs">{ empcharge.Concept }</div>
+						</td>
+						//Amount
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							<sl-format-number
+								type="currency"
+								currency="AED"
+								value={ fmt.Sprintf("%f", empcharge.Amount) }
+								lang="en-US"
+							></sl-format-number>
+						</td>
+						//Period
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							{ empcharge.Period }
+						</td>
+						//Monthly (Lack)
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							<sl-format-number
+								type="currency"
+								currency="AED"
+								value={ fmt.Sprintf("%f", empcharge.Monthly) }
+								lang="en-US"
+							></sl-format-number>
+							<br/>
+							<div class="text-gray-500">{ fmt.Sprintf("%d",empcharge.Months) } ({ empcharge.Lack })</div>
+						</td>
+						//Prepaid & P.Month
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							<sl-format-number
+								type="currency"
+								currency="AED"
+								value={ fmt.Sprintf("%f", empcharge.Prepay) }
+								lang="en-US"
+							></sl-format-number>
+							<br/>
+							<div class="text-gray-500">{ fmt.Sprintf("%d",empcharge.PrepayMonth) }</div>
+						</td>
+						//Renew
+						<td class="px-1 py-1 border-b border-gray-200 text-sm text-center">
+							if empcharge.Renew {
+								<sl-icon name="check-lg"></sl-icon>
+							} else {
+								-
+							}
+						</td>
+						//Actions
+						<td class="px-1 py-1 border-b border-gray-200 text-sm">
+							//Edit
+							<button
+								type="button"
+								id={ fmt.Sprintf("Edit-charges-employee-%d", empcharge.Id) }
+								hx-get={ fmt.Sprintf("/panels/invoicing/charges/%v/%d?reftype=%v&refuuid=%v&refid=%v", empcharge.ReferenceId, empcharge.Id, strings.ToLower(empcharge.ReferenceType), empcharge.ReferenceUuid, empcharge.ReferenceId) }
+								hx-target="#addformdialog"
+								hx-swap="innerHTML"
+								hx-indicator=".htmx-indicator"
+								onclick={ show() }
+							>
+								<i id="editItemIcon" class="fas fa-edit ml-2"></i>
+							</button>
+							//Generate Charges
+							<sl-tooltip content="Generated Charges" placement="top">
+								<button
+									type="button"
+									id={ fmt.Sprintf("employee-gen-btn-%d", empcharge.Id) }
+									hx-get={ fmt.Sprintf("/panels/invoicing/charges/charges?companyId=%v&chargeId=%v&panelId=employee", empcharge.ReferenceId, empcharge.Id) }
+									hx-trigger="click"
+									hx-on::after-request={ disableGenBtn(fmt.Sprintf("%d", empcharge.Id), "employee") }
+									hx-on::before-request={ displayLoading(fmt.Sprintf("%d", empcharge.Id), "employee") }
+									hx-target={ fmt.Sprintf("#employee-gen-charges-%d", empcharge.Id) }
+									hx-on:htmx:fail={ closeSingleCharge("employee", fmt.Sprintf("%d", empcharge.Id)) }
+									hx-swap="outerHTML"
+								>
+									<i class="fa-solid fa-list ml-2"></i>
+								</button>
+							</sl-tooltip>
+							//Link
+							// <button>
+							// 	<i id="faLink" class="fas fa-link ml-2"></i>
+							// </button>
+							//Delete
+							<button
+								type="button"
+								id={ fmt.Sprintf("Remove-charges-employee-%d", empcharge.Id) }
+								hx-delete={ fmt.Sprintf("/panels/invoicing/charges/%v/%d", emp.Employee.CompanyId, empcharge.Id) }
+								hx-confirm="Are you sure?"
+								hx-target="closest tr"
+								hx-swap="delete"
+								hx-indicator=".htmx-indicator"
+							>
+								<i id="removeItemIcon" class="fas fa-trash-alt ml-2"></i>
+							</button>
+							if empcharge.Details>0 {
+								<button
+									type="button"
+									class="..."
+									onclick={ toggle(empcharge.Id) }
+								>
+									<i id="faLight" class="fas fa-light fa-circle-info ml-2"></i>
+								</button>
+							}
+						</td>
+					</tr>
+					<!-- Details row if available... -->
+					if  empcharge.Details >0 {
+						<tr
+							id={ fmt.Sprintf("detailsRow%d", empcharge.Id) }
+							class={ fmt.Sprintf("chargedefCompany-%d bg-gray-100 hidden", item.Company.Id) }
+						>
+							<!-- Hidden nested element -->
+							<td
+								colspan="8"
+								class="px-1 py-1 border-b border-gray-200 text-sm"
+								id={ fmt.Sprintf("nestedElement%d", empcharge.Id) }
+							>
+								Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+								eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+								enim ad minim veniam, quis nostrud exercitation ullamco laboris
+								nisi ut aliquip ex ea commodo consequat.
+							</td>
+						</tr>
+					}
+					//Generated Charges Row
+					<tr class="hidden" id={ fmt.Sprintf("employee-gen-charges-%d", empcharge.Id) }>
+						<td colspan="10">
+							<div class="flex justify-center items-center gap-2">
+								<sl-spinner style="font-size: 1rem; --indicator-color: black;"></sl-spinner>
+								<p class="text-center font-bold text-md ">
+									Loading...
+								</p>
+							</div>
+						</td>
+					</tr>
+				}
+			} else {
+				<!-- Row to display when there are no charges -->
+				<tr
+					class={ fmt.Sprintf("chargedefCompany-%d chargedefEmployee-%d hidden hover:bg-blue-100", item.Company.Id, emp.Employee.Id) }
+				>
+					<td
+						class="px-1 py-1 border-b border-gray-200 text-sm text-center"
+						colspan="11"
+					>
+						No entries
+					</td>
+				</tr>
+			}
+			if emp.Details>0 {
+				<tr
+					id={ fmt.Sprintf("detailsRow%d", emp.Employee.Id) }
+					class={ fmt.Sprintf("chargedefCompany-%d bg-gray-100 hidden", item.Company.Id) }
+				>
+					<!-- Hidden nested element -->
+					<td
+						colspan="8"
+						class="px-1 py-1 border-b border-gray-200 text-sm"
+						id={ fmt.Sprintf("nestedElement%d", emp.Employee.Id) }
+					>
+						Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+						eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
+						ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+						aliquip ex ea commodo consequat.
+					</td>
+				</tr>
+			}
+		}
+	}
+}
+
+script localToggleChargesVisibility(employeeId int) {
+  var chargesRows = document.querySelectorAll(
+    ".chargedefEmployee-" + employeeId,
+  );
+  var toggleIcon = document.getElementById("toggleIcon-" + employeeId);
+
+  var hide = chargesRows[0].classList.contains("hidden");
+  chargesRows.forEach((row) => {
+    row.classList.toggle("hidden");
+  });
+
+  // Update the icon based on visibility
+  if (hide) {
+    toggleIcon.classList.remove("fa-chevron-right");
+    toggleIcon.classList.add("fa-chevron-down");
+  } else {
+    toggleIcon.classList.remove("fa-chevron-down");
+    toggleIcon.classList.add("fa-chevron-right");
+  }
+}
+
+script localToggleVisibility(iconId string, targetQuery string) {
+  var elements = document.querySelectorAll(targetQuery);
+  var toggleIcon = document.getElementById("toggleIcon-" + iconId);
+  var hide = toggleIcon.classList.contains("fa-chevron-down");
+
+  // Update the icon based on visibility
+  if (hide) {
+    toggleIcon.classList.remove("fa-chevron-down");
+    toggleIcon.classList.add("fa-chevron-right");
+  } else {
+    toggleIcon.classList.remove("fa-chevron-right");
+    toggleIcon.classList.add("fa-chevron-down");
+  }
+
+  //console.log("elements");
+  //console.log(elements);
+  elements.forEach((element) => {
+    // Initialize a counter attribute if not already set
+    if (!element.hasAttribute("data-hidden-counter")) {
+      element.setAttribute("data-hidden-counter", 0);
+    }
+    var counter = parseInt(element.getAttribute("data-hidden-counter"));
+	//TODO: CHECK HERE
+    // Check if the item is already hidden
+    var isRowHidden = element.classList.contains("hidden");
+    // If showing, check if the counter is not 0 before removing "hidden" class
+    if (hide) {
+      if (isRowHidden) {
+        counter++;
+      } else {
+        counter = 0;
+        element.classList.add("hidden");
+      }
+    } else {
+      if (counter === 0) {
+        element.classList.remove("hidden");
+      }
+      if (counter > 0) {
+        counter--;
+      }
+    }
+    // Update the counter attribute
+    element.setAttribute("data-hidden-counter", counter);
+  });
+}

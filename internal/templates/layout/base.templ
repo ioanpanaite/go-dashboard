@@ -1,0 +1,665 @@
+package layout
+
+import (
+	"fmt"
+)
+
+templ Base(showCompanySearch bool,module,page string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<!-- static files -->
+			<link rel="stylesheet" href="/panels/css/tss.css"/>
+			<title>{ page }</title>
+			<script src="/panels/js/global.js"></script>
+			<!-- other sources -->
+			<script src="https://unpkg.com/htmx.org"></script>
+			<link
+				rel="stylesheet"
+				href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+			/>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css"
+			/>
+			<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace-autoloader.js"></script>
+			<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/alert/alert.js"></script>
+		</head>
+		// Body
+		<body class="bg-gray-100 flex flex-col min-h-screen">
+			<!-- Flex container for sticky footer -->
+			<header class="bg-black text-white shadow-md border-b border-gray-500">
+				<div class="container pt-4 pb-3">
+					<div class="container flex items-baseline pl-4">
+						<!-- Added left padding -->
+						<h1 class="text-2xl font-bold uppercase mr-4">
+							{ module }
+						</h1>
+						<p id="header-subtitle" class="text-2xl capitalize">
+							{ page }
+						</p>
+					</div>
+				</div>
+				<sl-progress-bar
+					indeterminate
+					style="--height: 4px"
+					class="htmx-indicator"
+				></sl-progress-bar>
+			</header>
+			//Main body
+			<div class="flex flex-grow">
+				<!-- Flex container for main content and nav -->
+				<nav id="main-nav" class="bg-black w-52 p-2 flex flex-col">
+					<!-- Black sidebar -->
+					<sl-tree selection-mode="leaf" style="--indent-size: 0rem;">
+						<sl-tree-item expanded class="text-black bg-gray-100 hover:bg-gray-200 p-1 my-1 rounded-md block shadow w-full text-left">
+							<div class="font-bold">
+								DASHBOARD
+							</div>
+							<sl-tree-item
+								if page == "insurance" {
+									class="bg-blue-300 text-white p-1 my-1 rounded-md block shadow w-full text-left"
+								} else {
+									class="text-black bg-gray-50 hover:bg-gray-100 p-1 my-1 rounded-md block shadow w-full text-left"
+								}
+							>
+								<a
+									class="absolute inset-0 flex items-center justify-left px-4"
+									href="/panels/insurance"
+								>Insurance</a>
+							</sl-tree-item>
+							<sl-tree-item
+								if page == "onboarding" {
+									class="bg-blue-300 text-white p-1 my-1 rounded-md block shadow w-full text-left"
+								} else {
+									class="text-black bg-gray-50 hover:bg-gray-100 p-1 my-1 rounded-md block shadow w-full text-left"
+								}
+							>
+								<a
+									class="absolute inset-0 flex items-center justify-left px-4"
+									href="/panels/onboarding"
+								>Onboarding</a>
+							</sl-tree-item>
+							<sl-tree-item
+								if page == "offboarding" {
+									class="bg-blue-300 text-white p-1 my-1 rounded-md block shadow w-full text-left"
+								} else {
+									class="text-black bg-gray-50 hover:bg-gray-100 p-1 my-1 rounded-md block shadow w-full text-left"
+								}
+							>
+								<a
+									class="absolute inset-0 flex items-center justify-left px-4"
+									href="/panels/offboarding"
+								>Offboarding</a>
+							</sl-tree-item>
+							<sl-tree-item
+								if page == "missing" {
+									class="bg-blue-300 text-white p-1 my-1 rounded-md block shadow w-full text-left"
+								} else {
+									class="text-black bg-gray-50 hover:bg-gray-100 p-1 my-1 rounded-md block shadow w-full text-left"
+								}
+							>
+								<a
+									class="absolute inset-0 flex items-center justify-left px-4"
+									href="/panels/missing"
+								>Missing</a>
+							</sl-tree-item>
+						</sl-tree-item>
+						<sl-tree-item expanded class="text-black bg-gray-100 hover:bg-gray-200 p-1 my-1 rounded-md block shadow w-full text-left">
+							<div class="font-bold">
+								INVOICING
+							</div>
+							<sl-tree-item
+								if page == "charges" {
+									class="bg-blue-300 text-white p-1 my-1 rounded-md block shadow w-full text-left"
+								} else {
+									class="text-black bg-gray-50 hover:bg-gray-100 p-1 my-1 rounded-md block shadow w-full text-left"
+								}
+							>
+								<a
+									class="absolute inset-0 flex items-center justify-left px-4"
+									href="/panels/invoicing/charges"
+								>Charges</a>
+							</sl-tree-item>
+							<sl-tree-item
+								if page == "invoice" {
+									class="bg-blue-300 text-white p-1 my-1 rounded-md block shadow w-full text-left"
+								} else {
+									class="text-black bg-gray-50 hover:bg-gray-100 p-1 my-1 rounded-md block shadow w-full text-left"
+								}
+							>
+								<a
+									class="absolute inset-0 flex items-center justify-left px-4"
+									href="/panels/invoicing/invoice"
+								>Invoice</a>
+							</sl-tree-item>
+						</sl-tree-item>
+					</sl-tree>
+				</nav>
+				// Search
+				if showCompanySearch {
+					<div id="company-search" class="container w-52 bg-gray-200">
+						<div class="container bg-gray-300 p-2">
+							<input
+								id="searchInput"
+								type="search"
+								name="search"
+								class="appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-full"
+								placeholder="Search Company..."
+								hx-get={ fmt.Sprintf(`/panels/companies/search?module=%v&page=%v`, module, page) }
+								hx-target="#company-links"
+								hx-swap="innerHTML"
+								hx-trigger="keyup delay:200ms"
+							/>
+						</div>
+						<div
+							id="company-links"
+							class="container"
+							hx-get={ fmt.Sprintf(`/panels/companies/search?module=%v&page=%v`, module, page) }
+							hx-target="#company-links"
+							hx-swap="innerHTML"
+							hx-trigger="load delay:100ms"
+							{ templ.Attributes{"hx-headers": map[string]any{"module": module, "page": page}}... }
+						>
+							<sl-spinner class="text-2xl m-5"></sl-spinner>
+						</div>
+					</div>
+				}
+				<main class="flex-grow">
+					<div id="controls" class="">
+						<div class="bg-teal-950 text-white flex items-center p-2">
+							<button
+								type="button"
+								class="py-2 px-4 mr-3 hover:bg-blue-300 text-white rounded focus:outline-none focus:shadow-outline"
+								onclick="toggleVisibility('main','.filtersBox')"
+							>
+								<div class="w-3">
+									<i id="toggleIcon-main" class="fas fa-chevron-right"></i>
+								</div>
+							</button>
+							<strong>FILTERS</strong>
+							<div class="w-3"></div>
+							<input
+								id="searchInput"
+								type="search"
+								name="search"
+								class="form-control appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-1/2"
+								placeholder="Search..."
+							/>
+							<label class="flex items-center cursor-pointer m-4">
+								<input
+									type="checkbox"
+									id="seePending"
+									name="seePending"
+									class="hidden"
+								/>
+								<!-- <div
+                  id="chip"
+                  class="chip flex items-center px-3 py-1 bg-gray-200 rounded-full"
+                >
+                  <span class="text-sm text-gray-700">See Only Pending</span>
+                  <i id="faCheckmark" class="fas fa-check ml-2 hidden"></i>
+                </div> -->
+							</label>
+							<div class="grow"></div>
+							<button
+								id=""
+								class="clearButton py-2 px-5 mr-1 bg-blue-500 border border-blue-500 rounded hover:bg-red-300 focus:shadow-outline"
+							>
+								Clear
+							</button>
+							<button
+								id="filterButton"
+								type="submit"
+								onclick="hideVisibility('main','.filtersBox')"
+								class="py-2 px-5 mr-3 bg-blue-500 hover:bg-blue-300 text-white rounded focus:outline-none focus:shadow-outline"
+							>
+								Filter
+							</button>
+						</div>
+						<div class="filtersBox p-2 pb-5 bg-gray-200 rounded-b-lg hidden">
+							<div class="mx-auto container grid grid-cols-3 gap-2">
+								<!-- Company Search -->
+								<!-- <div class="block col-span-3">
+									<input
+									id="searchCompany"
+									name="searchCompany"
+									type="search"
+									placeholder="Search Company"
+									class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+									/>
+								</div> -->
+								<!-- Chip Company Search -->
+								<label for="searchCompany">Company:</label>
+								<div
+									id="searchCompany-FILTER"
+									class="col-span-3 flex items-center"
+								>
+									<sl-dropdown hoist id="searchMenu">
+										<div class="h-6"></div>
+										<sl-menu
+											id="menuItems"
+											class="menuItems overflow-y-scroll"
+											style=" width: 500px; height: 250px;"
+										>
+											Type to search...
+										</sl-menu>
+									</sl-dropdown>
+									<sl-input
+										slot="trigger"
+										id="inputFilter"
+										name="search"
+										autocomplete="off"
+										size="small"
+										placeholder="Search Company..."
+										hx-get={ fmt.Sprintf(`/panels/companies/search?module=%v&page=%v`, "invoicing", "charges") }
+										hx-target="previous .menuItems"
+										hx-swap="innerHTML"
+										hx-trigger="keyup delay:1000ms"
+										hx-indicator=".htmx-indicator"
+									></sl-input>
+									<div class="chipsholder"></div>
+									<input
+										type="hidden"
+										id="companyIdsInputMain"
+										name="companyIdsMain"
+									/>
+								</div>
+								<!-- Employee Search -->
+								<!-- <div class="block">
+								<input
+								id="searchEmployee"
+								name="searchEmployee"
+								type="search"
+								placeholder="Search Employee"
+								class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+								/>
+								</div> -->
+								<label for="searchEmployee">Employee:</label>
+								<div
+									id="searchEmployee-FILTER"
+									class="col-span-3 flex items-center"
+								>
+									<sl-dropdown hoist id="searchMenuEmployee">
+										<div class="h-6"></div>
+										<sl-menu
+											id="menuItems"
+											class="menuItems overflow-y-scroll"
+											style=" width: 500px; height: 250px;"
+										>
+											Type to search...
+										</sl-menu>
+									</sl-dropdown>
+									<sl-input
+										slot="trigger"
+										id="inputFilterEmployee"
+										name="search"
+										size="small"
+										autocomplete="off"
+										placeholder="Search Employee..."
+										hx-get={ fmt.Sprintf(`/panels/employee/search?module=%v&page=%v&fast=%v`, "invoicing", "charges", "true") }
+										hx-target="previous .menuItems"
+										hx-swap="innerHTML"
+										hx-trigger="keyup delay:1000ms"
+										hx-indicator=".htmx-indicator"
+									></sl-input>
+									<div class="chipsholder"></div>
+									<input
+										type="hidden"
+										id="employeesIdsInputMain"
+										name="employeeIdsMain"
+									/>
+								</div>
+								<!-- Date Filter -->
+								<div class="block">
+									<label for="searchSalesStaff">Date Filter:</label>
+									<div class="flex flex-col gap-2 px-1">
+										<div class="flex items-center justify-between">
+											<label for="fromDate">From:</label>
+											<input class="w-40 border-[1px] border-gray-300 rounded-md p-1"
+											 name="fromDate" id="fromDate" type="date" placeholder="From Date" value=""></input>
+										</div>
+										<div class="flex items-center justify-between">
+											<label for="toDate">To:</label>
+											<input class="w-40 border-[1px] border-gray-300 rounded-md p-1" name="toDate" id="toDate" type="date" placeholder="From Date" value=""></input>
+										</div>
+									</div>
+									
+								</div>
+								<!-- Status Search -->
+								<div class="block">
+									<label for="searchStatus">Status:</label>
+									<input
+										id="searchStatus"
+										name="searchStatus"
+										type="search"
+										placeholder="Search Status"
+										class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+									/>
+								</div>
+								<!-- Category Search -->
+								<div class="block">
+									<label for="searchCategory">Category:</label>
+									<input
+										id="searchCategory"
+										name="searchCategory"
+										type="search"
+										placeholder="Search Category"
+										class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+									/>
+								</div>
+								<!-- Additional Searches -->
+								<div class="block">
+									<label for="searchEmail">Email:</label>
+									<input
+										id="searchEmail"
+										name="searchEmail"
+										type="search"
+										placeholder="Search Email"
+										class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+									/>
+								</div>
+								<div class="block">
+									<label for="searchAccMan">Account Manager:</label>
+									<input
+										id="searchAccMan"
+										name="searchAccMan"
+										type="search"
+										placeholder="Search Account Manager"
+										class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+									/>
+								</div>
+								<div class="block">
+									<label for="searchSalesStaff">Sales Staff:</label>
+									<input
+										id="searchSalesStaff"
+										name="searchSalesStaff"
+										type="search"
+										placeholder="Search Sales Staff"
+										class="w-full border border-blue-500 focus:border-blue-700 rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
+									/>
+								</div>
+								<!-- Clear Button -->
+								<div class="block col-span-3 flex">
+									<div class="grow"></div>
+									<button
+										class="clearButton py-2 px-5 bg-white border border-blue-500 rounded hover:bg-red-300 focus:shadow-outline"
+									>
+										Clear
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					{ children... }
+				</main>
+			</div>
+			<footer
+				class="bg-black text-white h-12 flex justify-center items-center mt-auto border-t border-gray-500"
+			>
+				<!-- Sticky footer -->
+				<div class="text-center">
+					<p>Connect Resources</p>
+				</div>
+			</footer>
+			<sl-dialog
+				id="addformdialog"
+				class="dialog-windows"
+				style="
+        --width: 35vw;
+        --header-spacing: 0px;
+        --body-spacing: 0px;
+        --footer-spacing: 0px;
+      "
+				no-header
+			></sl-dialog>
+		</body>
+		<script>
+	 document.addEventListener("DOMContentLoaded", function () {
+      const checkbox = document.getElementById("seePending");
+      const faCheckmark = document.getElementById("faCheckmark");
+      const chip = document.getElementById("chip");
+
+      checkbox.addEventListener("change", function () {
+        if (checkbox.checked) {
+          faCheckmark.classList.remove("hidden");
+          chip.classList.add("bg-green-300"); // Lighter green background when selected
+          chip.classList.remove("bg-gray-200");
+        } else {
+          faCheckmark.classList.add("hidden");
+          chip.classList.remove("bg-green-300");
+          chip.classList.add("bg-gray-200"); // Original background color
+        }
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const prevButton = document.querySelector("#prev");
+      const nextButton = document.querySelector("#next");
+      const searchForm = document.querySelector("#searchForm");
+      let currentPage = 1; // Initialize current page
+
+      function updatePaginationParams() {
+        // Update button parameters
+        searchForm.setAttribute("hx-headers", `{"page":"${currentPage}"}`);
+
+        // Hide and disable the prev button if the current page is 1
+        if (currentPage === 1) {
+          prevButton.style.display = "none";
+          prevButton.disabled = true;
+        } else {
+          prevButton.style.display = "";
+          prevButton.disabled = false;
+        }
+      }
+
+      // Event listeners for pagination buttons
+      prevButton.addEventListener("click", function () {
+        if (currentPage > 1) {
+          currentPage--;
+          updatePaginationParams();
+        }
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+      nextButton.addEventListener("click", function () {
+        currentPage++;
+        //console.log(currentPage);
+        updatePaginationParams();
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+
+      updatePaginationParams(); // Initial update
+    });
+
+    filterState = {};
+
+    initializeDropdown("searchCompany-FILTER");
+    initializeDropdown("searchEmployee-FILTER");
+
+    // manage filters
+    filters = {};
+
+    // Attaching event listeners to all clear buttons
+    document.querySelectorAll(".clearButton").forEach((button) => {
+      button.addEventListener("click", function (event) {
+        clearInputsAndStorage();
+        const jsonHeader = extractInputsToJson();
+        //console.log(jsonHeader);
+        saveState();
+        //triggerFilterUpdate();
+      });
+    });
+    // Attaching an event listener to the filter button
+    document
+      .getElementById("filterButton")
+      .addEventListener("click", function (event) {
+        const jsonHeader = extractInputsToJson();
+        //console.log(jsonHeader);
+        // If you want to convert some part of the JSON to an integer, you can do so here
+        // Example: parseInt(JSON.parse(jsonHeader).someNumericField)
+        saveState();
+        triggerFilterUpdate();
+      });
+
+    // Load state on page load
+    window.addEventListener("DOMContentLoaded", loadState);
+
+    const dialog = document.querySelector(".dialog-windows");
+
+    document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener("htmx:afterRequest", function (evt) {
+        //console.log("evt");
+        //console.log(evt);
+        if (evt.detail.xhr.status == 200) {
+          if (evt.detail.requestConfig.verb == "post") {
+            // TODO - Add code to handle successful POST requests with html responses
+            let responseContentType =
+              evt.detail.xhr.getResponseHeader("Content-Type");
+            let sanitizedResponse = "";
+
+            if (responseContentType) {
+              if (responseContentType.includes("text/html")) {
+                // Parse the HTML response to extract the message
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(
+                  evt.detail.xhr.response,
+                  "text/html",
+                );
+                // Example: Assuming your HTML response has a message inside a <div> with a specific class
+                let messageDiv = doc.querySelector(".response-message");
+                sanitizedResponse = messageDiv
+                  ? messageDiv.textContent
+                  : "Action Successful";
+              } else if (responseContentType.includes("text/plain")) {
+                // Use the plain text response directly
+                sanitizedResponse =
+                  evt.detail.xhr.response || "Action Successful";
+              }
+            } else {
+              // Default to plain text response if Content-Type is not available
+              sanitizedResponse =
+                evt.detail.xhr.response || "Action Successful";
+            }
+
+            notify(sanitizedResponse, "success", "check2-circle", 3000);
+            //console.log("post");
+            dialog.hide();
+          }
+
+          if (evt.detail.requestConfig.verb == "delete") {
+            sanitizedResponse = "Delete Successful";
+            if (evt.detail.xhr.response) {
+              sanitizedResponse = evt.detail.xhr.response;
+            }
+            notify(sanitizedResponse, "success", "check2-circle", 3000);
+            //console.log("delete");
+            var row = document.getElementById(evt.detail.requestConfig.target);
+            if (row) {
+              row.remove();
+            }
+          }
+        }
+
+        if (evt.detail.xhr.status == 404) {
+          //console.log("error");
+          notify(
+            evt.detail.xhr.response,
+            "warning",
+            "exclamation-triangle",
+            3000,
+          );
+          //return alert("Error: Could Not Find Resource");
+        }
+
+        if (evt.detail.xhr.status == 500) {
+          //console.log("error");
+          notify(
+            evt.detail.xhr.response,
+            "danger",
+            "exclamation-octagon",
+            3000,
+          );
+          //return alert("Error: Could Not Find Resource");
+        }
+
+        if (evt.detail.successful != true) {
+          /* Notify of an unexpected error, & print error to //console */
+          //alert("Unexpected Error");
+          return; //console.error(evt);
+        }
+        if (evt.detail.target.id == "info-div") {
+          /* Execute code on the target of the HTMX request, which will
+              be either the hx-target attribute if set, or the triggering
+              element itself if not set. */
+          let infoDiv = document.getElementById("info-div");
+          infoDiv.style.backgroundColor = "#000000"; // black background
+          infoDiv.style.color = "#FFFFFF"; // white text
+        }
+      });
+
+      // Manage active navlink
+      var navLinks = document.querySelectorAll("#main-nav a");
+
+      updateActiveLink(); // Update active link on page load
+
+      window.addEventListener("popstate", updateActiveLink); // Update on history navigation
+
+      // Update icons based on the current state of the accordion
+      document.querySelectorAll("details").forEach(function (details) {
+        const icon = details.querySelector(".accordion-summary i");
+
+        // Function to update the icon class
+        function updateIcon() {
+          if (details.open) {
+            icon.classList.remove("fa-caret-right");
+            icon.classList.add("fa-caret-down");
+          } else {
+            icon.classList.remove("fa-caret-down");
+            icon.classList.add("fa-caret-right");
+          }
+        }
+
+        // Update icon on toggle
+        details.addEventListener("toggle", updateIcon);
+
+        // Update icon initially
+        updateIcon();
+      });
+
+      // Restore state on page load
+      restoreState();
+
+      // Add event listeners to save state when an accordion is toggled
+      document.querySelectorAll("details").forEach(function (details) {
+        details.addEventListener("toggle", function () {
+          saveState(details.id, details.open);
+        });
+      });
+    });
+								//Date Filter
+	document.addEventListener("DOMContentLoaded", function () {
+		//Init dates
+		var fromDate = document.getElementById("fromDate");
+  var toDate = document.getElementById("toDate");
+  toDate.value = formatDate(new Date());
+  fromDate.setAttribute("max", new Date().toISOString().split('T')[0]);
+  
+  fromDate.addEventListener("change", function (e) {
+	fromDate.value = formatDate(new Date(e.target.value));
+  });
+  toDate.addEventListener("change", function (e) {
+	toDate.value = formatDate(new Date(e.target.value));
+  });
+	})
+	</script>
+	</html>
+}

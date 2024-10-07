@@ -1,0 +1,78 @@
+package onboarding_view
+
+import "kub/dashboardES/internal/models"
+import "fmt"
+
+templ OnboardingTBody(data []models.DashboardRow) {
+	for _, item := range data {
+		<tr
+			if item.Pending == 1 {
+				class="bg-red-100 hover:bg-blue-100"
+			} else {
+				class="bg-white hover:bg-blue-100"
+			}
+		>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">{ item.Name } item</td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item .ClientName }
+			</td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">{  item.Status } </td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm w-20">
+				<sl-format-date
+					date={ item.CompanyUserStartDate }
+					year="2-digit"
+					month="short"
+					day="numeric"
+				></sl-format-date>
+			</td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item.FinanceApproved }
+			</td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item.AccountManager }
+			</td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				{ item .SalesStaff }
+			</td>
+			<td class="px-1 py-1 border-b border-gray-200 text-sm">
+				<a
+					href={ templ.URL(fmt.Sprintf("https://eservices.connectresources.ae/manage-employees/%d/%d/info", item.CompanyId, item.Id)) }
+					target="_blank"
+				>
+					<i id="faLink" class="fas fa-link ml-2"></i>
+				</a>
+				if item.Details>0 {
+					<button
+						type="button"
+						class="..."
+						onclick={ toggle(item) }
+					>
+						<i id="faLight" class="fas fa-light fa-circle-info ml-2"></i>
+					</button>
+				}
+			</td>
+		</tr>
+		if item.Details <0 {
+			<!-- Hidden nested element -->
+			<tr
+				id={ fmt.Sprintf("detailsRow%d", item.Id) }
+				class="bg-gray-100 hidden"
+			>
+				<td
+					colspan="9"
+					class="px-1 py-1 border-b border-gray-200 text-sm"
+					id={ fmt.Sprintf("nestedElement%d", item.Id) }
+				>
+					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+					eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+					minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+					aliquip ex ea commodo consequat.
+				</td>
+			</tr>
+		}
+	}
+}
+
+script toggle(data models.DashboardRow) {
+	toggleDetails("detailsRow"+data.Id);
+}

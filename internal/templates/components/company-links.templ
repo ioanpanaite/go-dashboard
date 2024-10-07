@@ -1,0 +1,29 @@
+package components
+
+import "kub/dashboardES/internal/models"
+import "fmt"
+
+templ CompanyLinks (values string, companies []models.Company) {
+	if values == "uuid" {
+		for _, item := range companies {
+			<sl-menu-item 
+			 value={ item.Uuid }
+			data-uuid={ item.Uuid }
+			data-id={ fmt.Sprintf("%d", item.Id) }
+			 >
+				{ item.Name }
+			</sl-menu-item>
+		}
+	} else {
+		for _, item := range companies {
+			<sl-menu-item 
+			data-uuid={ item.Uuid }
+			data-id={ fmt.Sprintf("%d", item.Id) }
+			value={ fmt.Sprintf("%d", item.Id) }>
+				{ item.Name }
+			</sl-menu-item>
+		}
+	}
+}
+
+

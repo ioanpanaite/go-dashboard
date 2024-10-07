@@ -1,0 +1,277 @@
+package missing_view
+
+import (
+	"fmt"
+	"kub/dashboardES/internal/models"
+)
+
+templ MissingInfoTBody(isEdit string, data []models.DashboardRow ) {
+	for _, item := range data {
+		<tr
+			if item.Pending == 1 {
+				class="bg-red-50 hover:bg-blue-100"
+			} else {
+				class="hover:bg-blue-100"
+			}
+		>
+			<td class="dash-td ">{ item.Name }</td>
+			<td class="dash-td ">
+				{ item.ClientName }
+			</td>
+			<td class="dash-td w-40 ">
+				<div class="dash-cell-dual">
+					if isEdit != "" {
+						<input
+							type="text"
+							value={ item.EID }
+							name="eid"
+							class="dash-cell-input"
+						/>
+						<input
+							type="text"
+							value={ item.Passport }
+							name="passport"
+							class="dash-cell-input"
+						/>
+					} else {
+						<div
+							if item.Flag_emiratesIDNumber == 1 {
+								class="dash-cell-content dash-input-error"
+							} else {
+								class="dash-cell-content"
+							}
+						>
+							{ item.EID }
+						</div>
+						<div
+							if item.Flag_passaportID == 1 {
+								class="dash-cell-content dash-input-error"
+							}
+							else
+							if item.Flag_passaportIDNumber == 1 {
+								class="dash-cell-content dash-input-error"
+							} else {
+								class="dash-cell-content dash-cell-separator"
+							}
+						>
+							{ item.Passport }
+						</div>
+					}
+				</div>
+			</td>
+			<td class="dash-td">
+				<div class="dash-cell-dual">
+					if isEdit != "" {
+						<input
+							type="email"
+							value={ item.Email }
+							name="email"
+							class="dash-cell-input"
+						/>
+						<input
+							type="text"
+							value={ item.Phone }
+							name="phone"
+							class="dash-cell-input"
+						/>
+					} else {
+						<div class="dash-cell-content ">{ item.Email } </div>
+						<div class="dash-cell-content dash-cell-separator">
+							{ item.Phone }
+						</div>
+					}
+				</div>
+			</td>
+			<td class="dash-td">
+				<div class="dash-cell-dual">
+					if isEdit != "" {
+						<input
+							type="text"
+							value={ item.EJARI }
+							name="ejari"
+							class="dash-cell-input"
+						/>
+						<input
+							type="date"
+							value={ item.EJARI_expiration }
+							name="ejari_expiration"
+							class="dash-cell-input"
+						/>
+					} else {
+						<div class="dash-cell-content ">{ item.EJARI  }</div>
+						<div class="dash-cell-content dash-cell-separator">
+							{ item.EJARI_expiration  }
+						</div>
+						<div class="dash-cell-hover-button-holder">
+							<sl-tooltip content="Open Ejari Info">
+								<a
+									href={ templ.URL(fmt.Sprintf("https://eservices.connectresources.ae/ejari/%d", item.CompanyId)) }
+									target="_blank"
+									class="dash-cell-hover-button-effect"
+								>
+									<i id="faLink" class="fas fa-link ml-2"></i>
+								</a>
+							</sl-tooltip>
+						</div>
+					}
+				</div>
+			</td>
+			<td class="dash-td">
+				<div class="dash-cell-dual">
+					<!-- Set a minimum height -->
+					if isEdit != "" {
+						<input
+							type="text"
+							value={ item.DEWA }
+							name="dewa"
+							class="dash-cell-input"
+						/>
+						<input
+							type="date"
+							value={ item.DEWA_expiration }
+							name="dewa_expiration"
+							class="dash-cell-input"
+						/>
+					} else {
+						<div class="dash-cell-content ">{ item.DEWA }</div>
+						<div class="dash-cell-content dash-cell-separator">
+							{ item .DEWA_expiration  }
+						</div>
+					}
+				</div>
+			</td>
+			<td class="dash-td">
+				<div class="dash-cell-dual">
+					if isEdit != "" {
+						<input
+							type="text"
+							value={ item.VisaNumber }
+							name="visaNumber"
+							class="dash-cell-input"
+							if item.VisaNumber != "" {
+								disabled
+							}
+						/>
+						<input
+							type="text"
+							value={ item.LaborCard }
+							name="laborCard"
+							class="dash-cell-input"
+							if item.LaborCard != "" {
+								disabled
+							}
+						/>
+					} else {
+						<div class="dash-cell-content ">{ item.VisaNumber }</div>
+						<div class="dash-cell-content dash-cell-separator">
+							{ item.LaborCard }
+						</div>
+						<div class="dash-cell-hover-button-holder">
+							<sl-tooltip content="Open Employee Visa Info">
+								<a
+									href={ templ.URL(fmt.Sprintf("https://eservices.connectresources.ae/manage-employees/%d/%d/employee_visa", item.CompanyId, item.Id)) }
+									target="_blank"
+									class="dash-cell-hover-button-effect"
+								>
+									<i id="faLink" class="fas fa-link ml-2"></i>
+								</a>
+							</sl-tooltip>
+							<sl-tooltip content="Open Employee Contract Info">
+								<a
+									href={ templ.URL(fmt.Sprintf("https://eservices.connectresources.ae/manage-employees/%d/%d/contract", item.CompanyId, item.Id)) }
+									target="_blank"
+									class="dash-cell-hover-button-effect"
+								>
+									<i id="faLink" class="fas fa-link ml-2"></i>
+								</a>
+							</sl-tooltip>
+						</div>
+					}
+				</div>
+			</td>
+			<td class="dash-td w-28">
+				<!-- Actions -->
+				if isEdit != "" {
+					<!-- Edit Mode -->
+					<!-- Save Button with Icon -->
+					<button
+						type="button"
+						class="dash-cell-action-button"
+						hx-post={ fmt.Sprintf("/panels/missing/update/%d?id=%d&companyId=%d&companyUserId=%d", item.Id,item.Id, item.CompanyId, item.CompanyUserId) }
+						hx-target="closest tr"
+						hx-swap="outerHTML"
+						hx-include="closest tr"
+					>
+						<div class="text-center w-5"><i class="fas fa-save"></i></div>
+					</button>
+					<!-- Cancel Button with Icon -->
+					<button
+						type="button"
+						class="dash-cell-action-button"
+						hx-get={ fmt.Sprintf("/panels/missing/get/%d?id=%d&companyId=%d&companyUserId=%d",item.Id, item.Id, item.CompanyId, item.CompanyUserId) }
+						hx-target="closest tr"
+						hx-swap="outerHTML"
+					>
+						<div class="text-center w-5"><i class="fas fa-times"></i></div>
+					</button>
+				} else {
+					<!-- Link Button -->
+					<button
+						onclick={ windowOpen(item) }
+						class="dash-cell-action-button"
+					>
+						<div class="text-center w-5"><i class="fas fa-link"></i></div>
+					</button>
+					<!-- Normal Mode Edit Button -->
+					<button
+						type="button"
+						class="dash-cell-action-button"
+						hx-get={ fmt.Sprintf("/panels/missing/get/%d?edit=%v&id=%d&companyId=%d&companyUserId=%d", item.Id, "true", item.Id, item.CompanyId, item.CompanyUserId) }
+						hx-target="closest tr"
+						hx-swap="outerHTML"
+					>
+						<div class="text-center w-5"><i class="fas fa-edit"></i></div>
+					</button>
+					if item.Details >0 {
+						<!-- Details Button -->
+						<button
+							type="button"
+							class="dash-cell-action-button"
+							onclick={ toggle(item) }
+						>
+							<div class="text-center w-5">
+								<i id="faLight" class="fas fa-light fa-circle-info ml-2"></i>
+							</div>
+						</button>
+					}
+				}
+			</td>
+		</tr>
+		if item.Details >0 {
+			<tr
+				id={ fmt.Sprintf("detailsRow%d", item.Id) }
+				class="bg-gray-100 hidden"
+			>
+				<!-- Hidden nested element -->
+				<td
+					colspan="9"
+					class="px-1 py-1 border-b border-gray-300 text-sm"
+					id={ fmt.Sprintf("nestedElement%d", item.Id) }
+				>
+					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+					eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+					minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+					aliquip ex ea commodo consequat.
+				</td>
+			</tr>
+		}
+	}
+}
+
+script toggle(data models.DashboardRow) {
+	toggleDetails("detailsRow"+data.Id);
+}
+
+script windowOpen(data models.DashboardRow) {
+	window.open('https://eservices.connectresources.ae/manage-employees/'+ data.CompanyId+'/'+ data.Id +'/info', '_blank');
+}
